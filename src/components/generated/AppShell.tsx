@@ -53,7 +53,7 @@ export const AppShell = (props: AppShellProps) => {
       case 'quizzes':
         return <QuizzesPage selectedSubjectId={selectedSubjectId} onQuizClick={id => console.log('Quiz clicked:', id)} data-magicpath-id="1" data-magicpath-path="AppShell.tsx" />;
       case 'upload':
-        return <MaterialsPage data-magicpath-id="2" data-magicpath-path="AppShell.tsx" />;
+        return <MaterialsPage preSelectedSubjectId={selectedSubjectId !== 'all' ? selectedSubjectId : undefined} data-magicpath-id="2" data-magicpath-path="AppShell.tsx" />;
       case 'dashboard':
         return <DashboardPage userName={userName} data-magicpath-id="3" data-magicpath-path="AppShell.tsx" />;
       default:
