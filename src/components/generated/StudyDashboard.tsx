@@ -479,33 +479,6 @@ export const StudyDashboard = (props: StudyDashboardProps) => {
                   </div>
                 </div>
               </section>}
-
-            {/* All Subjects Overview */}
-            <section className="mt-8" aria-labelledby="all-subjects-heading" data-magicpath-id="181" data-magicpath-path="StudyDashboard.tsx">
-              <h3 id="all-subjects-heading" className="text-xl sm:text-2xl font-bold text-slate-900 mb-4" data-magicpath-id="182" data-magicpath-path="StudyDashboard.tsx">All Subjects Overview</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-magicpath-id="183" data-magicpath-path="StudyDashboard.tsx">
-                {subjects.map(subject => <button key={subject.id} onClick={() => setSelectedSubject(subject)} className={`bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-5 text-left transition-all hover:shadow-lg ${selectedSubject.id === subject.id ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:border-slate-300'}`} data-magicpath-id="184" data-magicpath-path="StudyDashboard.tsx">
-                    <div className="flex items-start justify-between mb-4" data-magicpath-id="185" data-magicpath-path="StudyDashboard.tsx">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${subject.color} flex items-center justify-center shadow-md`} data-magicpath-id="186" data-magicpath-path="StudyDashboard.tsx">
-                        <Book className="w-6 h-6 text-white" data-magicpath-id="187" data-magicpath-path="StudyDashboard.tsx" />
-                      </div>
-                      <div className={`px-3 py-1.5 rounded-lg text-xs font-bold ${getPassingChanceColor(subject.passingChance)}`} data-magicpath-id="188" data-magicpath-path="StudyDashboard.tsx">
-                        <span data-magicpath-id="189" data-magicpath-path="StudyDashboard.tsx">{subject.passingChance}%</span>
-                      </div>
-                    </div>
-                    <h4 className="text-lg font-bold text-slate-900 mb-1" data-magicpath-id="190" data-magicpath-path="StudyDashboard.tsx">{subject.name}</h4>
-                    <p className="text-sm text-slate-600 mb-3" data-magicpath-id="191" data-magicpath-path="StudyDashboard.tsx">{subject.quizzesTaken} quizzes completed</p>
-                    <div className="flex items-center gap-2" data-magicpath-id="192" data-magicpath-path="StudyDashboard.tsx">
-                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden" data-magicpath-id="193" data-magicpath-path="StudyDashboard.tsx">
-                        <div className={`h-full bg-gradient-to-r ${subject.color} rounded-full transition-all duration-500`} style={{
-                      width: `${subject.progress}%`
-                    }} data-magicpath-id="194" data-magicpath-path="StudyDashboard.tsx"></div>
-                      </div>
-                      <span className="text-sm font-bold text-slate-700" data-magicpath-id="195" data-magicpath-path="StudyDashboard.tsx">{subject.progress}%</span>
-                    </div>
-                  </button>)}
-              </div>
-            </section>
           </div>
         </main>
       </div>
