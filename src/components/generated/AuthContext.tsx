@@ -33,6 +33,13 @@ export const AuthProvider = ({
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
 
+    // Hardcoded credentials for testing
+    const VALID_EMAIL = 'example@passia.study';
+    const VALID_PASSWORD = 'Example123';
+    if (email !== VALID_EMAIL || password !== VALID_PASSWORD) {
+      throw new Error('Invalid email or password');
+    }
+
     // Mock user data - in real app, this would come from your backend
     const mockUser: User = {
       id: '1',

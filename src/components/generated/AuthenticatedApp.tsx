@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { LandingPage } from './LandingPage';
 import { SignUpPage } from './SignUpPage';
 import { SignInPage } from './SignInPage';
+import { ForgotPasswordPage } from './ForgotPasswordPage';
 import { ProfilePage } from './ProfilePage';
 import { SettingsPage } from './SettingsPage';
 import { AppShell } from './AppShell';
 import { AuthProvider, useAuth } from './AuthContext';
-type AuthView = 'landing' | 'signup' | 'signin' | 'app' | 'profile' | 'settings';
+type AuthView = 'landing' | 'signup' | 'signin' | 'forgotpassword' | 'app' | 'profile' | 'settings';
 const AuthenticatedAppContent = () => {
   const {
     user,
@@ -46,7 +47,7 @@ const AuthenticatedAppContent = () => {
       await signIn(data.email, data.password);
       setCurrentView('app');
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      setError('Invalid credentials. Use example@passia.study with password Example123');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -62,7 +63,7 @@ const AuthenticatedAppContent = () => {
 
   // If authenticated and viewing landing/signup/signin, redirect to app
   React.useEffect(() => {
-    if (isAuthenticated && ['landing', 'signup', 'signin'].includes(currentView)) {
+    if (isAuthenticated && ['landing', 'signup', 'signin', 'forgotpassword'].includes(currentView)) {
       setCurrentView('app');
     }
   }, [isAuthenticated, currentView]);
@@ -75,20 +76,23 @@ const AuthenticatedAppContent = () => {
     return <SignUpPage onSignUp={handleSignUp} onBackToLanding={() => setCurrentView('landing')} onGoToSignIn={() => setCurrentView('signin')} data-magicpath-id="1" data-magicpath-path="AuthenticatedApp.tsx" />;
   }
   if (currentView === 'signin') {
-    return <SignInPage onSignIn={handleSignIn} onBackToLanding={() => setCurrentView('landing')} onGoToSignUp={() => setCurrentView('signup')} onForgotPassword={() => alert('Password reset functionality coming soon!')} data-magicpath-id="2" data-magicpath-path="AuthenticatedApp.tsx" />;
+    return <SignInPage onSignIn={handleSignIn} onBackToLanding={() => setCurrentView('landing')} onGoToSignUp={() => setCurrentView('signup')} onForgotPassword={() => setCurrentView('forgotpassword')} serverError={error} isLoading={isLoading} data-magicpath-id="2" data-magicpath-path="AuthenticatedApp.tsx" />;
+  }
+  if (currentView === 'forgotpassword') {
+    return <ForgotPasswordPage onBackToSignIn={() => setCurrentView('signin')} onBackToLanding={() => setCurrentView('landing')} data-magicpath-id="3" data-magicpath-path="AuthenticatedApp.tsx" />;
   }
   if (currentView === 'profile') {
-    return <ProfilePage onUpdateProfile={handleUpdateProfile} onBack={() => setCurrentView('app')} data-magicpath-id="3" data-magicpath-path="AuthenticatedApp.tsx" />;
+    return <ProfilePage onUpdateProfile={handleUpdateProfile} onBack={() => setCurrentView('app')} data-magicpath-id="4" data-magicpath-path="AuthenticatedApp.tsx" />;
   }
   if (currentView === 'settings') {
-    return <SettingsPage onLogout={handleLogout} onBack={() => setCurrentView('app')} data-magicpath-id="4" data-magicpath-path="AuthenticatedApp.tsx" />;
+    return <SettingsPage onLogout={handleLogout} onBack={() => setCurrentView('app')} data-magicpath-id="5" data-magicpath-path="AuthenticatedApp.tsx" />;
   }
 
   // Main app view with AppShell
-  return <AppShell userName={user?.name} onProfileClick={() => setCurrentView('profile')} onSettingsClick={() => setCurrentView('settings')} data-magicpath-id="5" data-magicpath-path="AuthenticatedApp.tsx" />;
+  return <AppShell userName={user?.name} onProfileClick={() => setCurrentView('profile')} onSettingsClick={() => setCurrentView('settings')} data-magicpath-id="6" data-magicpath-path="AuthenticatedApp.tsx" />;
 };
 export const AuthenticatedApp = () => {
-  return <AuthProvider data-magicpath-id="6" data-magicpath-path="AuthenticatedApp.tsx">
-      <AuthenticatedAppContent data-magicpath-id="7" data-magicpath-path="AuthenticatedApp.tsx" />
+  return <AuthProvider data-magicpath-id="7" data-magicpath-path="AuthenticatedApp.tsx">
+      <AuthenticatedAppContent data-magicpath-id="8" data-magicpath-path="AuthenticatedApp.tsx" />
     </AuthProvider>;
 };
