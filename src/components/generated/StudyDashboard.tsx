@@ -96,6 +96,11 @@ const navigationItems: NavigationItem[] = [{
   icon: LayoutDashboard,
   path: '/'
 }, {
+  id: 'study-plan',
+  label: 'Study Plan',
+  icon: GraduationCap,
+  path: '/study-plan'
+}, {
   id: 'subjects',
   label: 'Subjects',
   icon: Book,
