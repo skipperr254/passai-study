@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileQuestion, Play, Clock, Target, TrendingUp, Trophy, Calendar, ChevronRight, Book, CheckCircle2, XCircle, AlertCircle, Zap, Star, Plus, Filter, BarChart3, Brain, X, ChevronDown } from 'lucide-react';
 import { QuizDetailPage } from './QuizDetailPage';
+import { CreateQuizFlow } from './CreateQuizFlow';
 type Quiz = {
   id: string;
   title: string;
@@ -143,6 +144,7 @@ export const QuizzesPage = (props: QuizzesPageProps) => {
   const [selectedSubject, setSelectedSubject] = useState<Subject>(subjects.find(s => s.id === props.selectedSubjectId) || subjects[0]);
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
+  const [showCreateQuiz, setShowCreateQuiz] = useState(false);
 
   // If viewing quiz detail, show that page
   if (selectedQuizId) {
@@ -213,7 +215,7 @@ export const QuizzesPage = (props: QuizzesPageProps) => {
               <h1 className="text-2xl lg:text-4xl font-bold text-slate-900 mb-1 lg:mb-2" data-magicpath-id="6" data-magicpath-path="QuizzesPage.tsx">My Quizzes</h1>
               <p className="text-sm lg:text-base text-slate-600" data-magicpath-id="7" data-magicpath-path="QuizzesPage.tsx">Practice and track your performance</p>
             </div>
-            <button className="hidden lg:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all" data-magicpath-id="8" data-magicpath-path="QuizzesPage.tsx">
+            <button onClick={() => setShowCreateQuiz(true)} className="hidden lg:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all" data-magicpath-id="8" data-magicpath-path="QuizzesPage.tsx">
               <Plus className="w-5 h-5" data-magicpath-id="9" data-magicpath-path="QuizzesPage.tsx" />
               <span data-magicpath-id="10" data-magicpath-path="QuizzesPage.tsx">Create Quiz</span>
             </button>
@@ -371,11 +373,21 @@ export const QuizzesPage = (props: QuizzesPageProps) => {
       </div>
 
       {/* Mobile FAB */}
-      <button className="lg:hidden fixed bottom-20 right-4 z-30 w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl active:scale-95 transition-all" data-magicpath-id="87" data-magicpath-path="QuizzesPage.tsx">
+      <button onClick={() => setShowCreateQuiz(true)} className="lg:hidden fixed bottom-20 right-4 z-30 w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl active:scale-95 transition-all" data-magicpath-id="87" data-magicpath-path="QuizzesPage.tsx">
         <Plus className="w-6 h-6" data-magicpath-id="88" data-magicpath-path="QuizzesPage.tsx" />
       </button>
 
-      <style data-magicpath-id="89" data-magicpath-path="QuizzesPage.tsx">{`
+      {/* Create Quiz Flow Modal */}
+      {showCreateQuiz && <CreateQuizFlow onClose={() => setShowCreateQuiz(false)} onQuizCreated={(quizId, scheduleTime) => {
+      setShowCreateQuiz(false);
+      if (!scheduleTime) {
+        // Start quiz immediately
+        setSelectedQuizId(quizId);
+      }
+      // If scheduled, would show a success toast/notification
+    }} data-magicpath-id="89" data-magicpath-path="QuizzesPage.tsx" />}
+
+      <style data-magicpath-id="90" data-magicpath-path="QuizzesPage.tsx">{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
