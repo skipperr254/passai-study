@@ -146,7 +146,9 @@ export const QuizzesPage = (props: QuizzesPageProps) => {
 
   // If viewing quiz detail, show that page
   if (selectedQuizId) {
-    return <QuizDetailPage quizId={selectedQuizId} onBack={() => setSelectedQuizId(null)} onStartQuiz={() => console.log('Starting quiz:', selectedQuizId)} data-magicpath-id="0" data-magicpath-path="QuizzesPage.tsx" />;
+    return <QuizDetailPage quizId={selectedQuizId} onBack={() => setSelectedQuizId(null)} onStartQuiz={() => {
+      // Quiz session is now handled within QuizDetailPage
+    }} data-magicpath-id="0" data-magicpath-path="QuizzesPage.tsx" />;
   }
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
