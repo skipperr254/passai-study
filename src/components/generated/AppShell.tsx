@@ -44,12 +44,13 @@ const navigationItems: NavigationItem[] = [{
 export const AppShell = (props: AppShellProps) => {
   const userName = props.userName || 'Jake';
   const [activeNav, setActiveNav] = useState('dashboard');
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
   const renderPage = () => {
     switch (activeNav) {
       case 'subjects':
         return <SubjectsPage onSubjectClick={id => setActiveNav('dashboard')} data-magicpath-id="0" data-magicpath-path="AppShell.tsx" />;
       case 'quizzes':
-        return <QuizzesPage onQuizClick={id => console.log('Quiz clicked:', id)} data-magicpath-id="1" data-magicpath-path="AppShell.tsx" />;
+        return <QuizzesPage selectedSubjectId={selectedSubjectId} onQuizClick={id => console.log('Quiz clicked:', id)} data-magicpath-id="1" data-magicpath-path="AppShell.tsx" />;
       case 'dashboard':
         return <DashboardPage userName={userName} data-magicpath-id="2" data-magicpath-path="AppShell.tsx" />;
       default:
