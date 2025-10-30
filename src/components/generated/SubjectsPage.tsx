@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Book, Plus, Search, Filter, TrendingUp, Clock, Target, ChevronRight, FileText, Brain, Trophy, Calendar, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Book, Plus, Search, Filter, TrendingUp, Clock, Target, ChevronRight, FileText, Brain, Trophy, Calendar, AlertCircle, CheckCircle2, ArrowRight, X, Sparkles } from 'lucide-react';
 type Subject = {
   id: string;
   name: string;
@@ -113,6 +113,25 @@ export const SubjectsPage = (props: SubjectsPageProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBy, setFilterBy] = useState<'all' | 'needs-attention' | 'on-track' | 'excelling'>('all');
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
+  const [newSubject, setNewSubject] = useState({
+    name: '',
+    description: '',
+    testDate: '',
+    teacherEmphasis: ''
+  });
+  const handleAddSubject = () => {
+    // Here you would typically save the subject
+    console.log('Adding subject:', newSubject);
+    setIsAddSubjectOpen(false);
+    setNewSubject({
+      name: '',
+      description: '',
+      testDate: '',
+      teacherEmphasis: ''
+    });
+  };
+  const exampleEmphases = ['Focus on problem-solving methods', 'Memorize key dates and events', 'Understand concepts, not just formulas', 'Practice essay writing techniques', 'Review homework problems weekly'];
   const getPassingChanceColor = (chance: number) => {
     if (chance >= 90) return 'text-emerald-600 bg-emerald-50';
     if (chance >= 75) return 'text-green-600 bg-green-50';
@@ -154,7 +173,7 @@ export const SubjectsPage = (props: SubjectsPageProps) => {
               <h1 className="text-2xl lg:text-4xl font-bold text-slate-900 mb-1 lg:mb-2" data-magicpath-id="5" data-magicpath-path="SubjectsPage.tsx">My Subjects</h1>
               <p className="text-sm lg:text-base text-slate-600" data-magicpath-id="6" data-magicpath-path="SubjectsPage.tsx">Manage and track your learning progress</p>
             </div>
-            <button className="hidden lg:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all" data-magicpath-id="7" data-magicpath-path="SubjectsPage.tsx">
+            <button onClick={() => setIsAddSubjectOpen(true)} className="hidden lg:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all" data-magicpath-id="7" data-magicpath-path="SubjectsPage.tsx">
               <Plus className="w-5 h-5" data-magicpath-id="8" data-magicpath-path="SubjectsPage.tsx" />
               <span data-magicpath-id="9" data-magicpath-path="SubjectsPage.tsx">Add Subject</span>
             </button>
@@ -369,8 +388,116 @@ export const SubjectsPage = (props: SubjectsPageProps) => {
         </div>}
 
       {/* Mobile FAB */}
-      <button className="lg:hidden fixed bottom-20 right-4 z-30 w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl active:scale-95 transition-all" data-magicpath-id="120" data-magicpath-path="SubjectsPage.tsx">
+      <button onClick={() => setIsAddSubjectOpen(true)} className="lg:hidden fixed bottom-20 right-4 z-30 w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center hover:shadow-2xl active:scale-95 transition-all" data-magicpath-id="120" data-magicpath-path="SubjectsPage.tsx">
         <Plus className="w-6 h-6" data-magicpath-id="121" data-magicpath-path="SubjectsPage.tsx" />
       </button>
+
+      {/* Add Subject Modal */}
+      {isAddSubjectOpen && <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setIsAddSubjectOpen(false)} data-magicpath-id="122" data-magicpath-path="SubjectsPage.tsx">
+          <div className="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full md:max-w-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom md:zoom-in-95 duration-300" onClick={e => e.stopPropagation()} data-magicpath-id="123" data-magicpath-path="SubjectsPage.tsx">
+            {/* Modal Header */}
+            <div className="flex-shrink-0 px-6 py-5 border-b border-slate-200 bg-gradient-to-br from-blue-500 to-indigo-600" data-magicpath-id="124" data-magicpath-path="SubjectsPage.tsx">
+              <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mb-4 md:hidden" data-magicpath-id="125" data-magicpath-path="SubjectsPage.tsx"></div>
+              <div className="flex items-center gap-4" data-magicpath-id="126" data-magicpath-path="SubjectsPage.tsx">
+                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center" data-magicpath-id="127" data-magicpath-path="SubjectsPage.tsx">
+                  <Plus className="w-7 h-7 text-white" data-magicpath-id="128" data-magicpath-path="SubjectsPage.tsx" />
+                </div>
+                <div className="flex-1" data-magicpath-id="129" data-magicpath-path="SubjectsPage.tsx">
+                  <h2 className="text-2xl font-bold text-white mb-1" data-magicpath-id="130" data-magicpath-path="SubjectsPage.tsx">Add New Subject</h2>
+                  <p className="text-white/90 text-sm" data-magicpath-id="131" data-magicpath-path="SubjectsPage.tsx">Start tracking your progress</p>
+                </div>
+                <button onClick={() => setIsAddSubjectOpen(false)} className="w-9 h-9 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-all" aria-label="Close modal" data-magicpath-id="132" data-magicpath-path="SubjectsPage.tsx">
+                  <X className="w-5 h-5 text-white" data-magicpath-id="133" data-magicpath-path="SubjectsPage.tsx" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content - Form */}
+            <div className="flex-1 overflow-y-auto p-6" data-magicpath-id="134" data-magicpath-path="SubjectsPage.tsx">
+              <div className="space-y-5" data-magicpath-id="135" data-magicpath-path="SubjectsPage.tsx">
+                {/* Subject Name */}
+                <div data-magicpath-id="136" data-magicpath-path="SubjectsPage.tsx">
+                  <label htmlFor="subject-name" className="block text-sm font-bold text-slate-900 mb-2" data-magicpath-id="137" data-magicpath-path="SubjectsPage.tsx">
+                    Subject Name <span className="text-red-500" data-magicpath-id="138" data-magicpath-path="SubjectsPage.tsx">*</span>
+                  </label>
+                  <input id="subject-name" type="text" value={newSubject.name} onChange={e => setNewSubject({
+                ...newSubject,
+                name: e.target.value
+              })} placeholder="e.g., Mathematics, History, Biology" className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all" required data-magicpath-id="139" data-magicpath-path="SubjectsPage.tsx" />
+                </div>
+
+                {/* Description (Optional) */}
+                <div data-magicpath-id="140" data-magicpath-path="SubjectsPage.tsx">
+                  <label htmlFor="subject-description" className="block text-sm font-bold text-slate-900 mb-2" data-magicpath-id="141" data-magicpath-path="SubjectsPage.tsx">
+                    Description <span className="text-slate-400 font-normal" data-magicpath-id="142" data-magicpath-path="SubjectsPage.tsx">(Optional)</span>
+                  </label>
+                  <textarea id="subject-description" value={newSubject.description} onChange={e => setNewSubject({
+                ...newSubject,
+                description: e.target.value
+              })} placeholder="Add any additional context about this subject..." rows={3} className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none" data-magicpath-id="143" data-magicpath-path="SubjectsPage.tsx" />
+                </div>
+
+                {/* Test Date (Optional) */}
+                <div data-magicpath-id="144" data-magicpath-path="SubjectsPage.tsx">
+                  <label htmlFor="test-date" className="block text-sm font-bold text-slate-900 mb-2" data-magicpath-id="145" data-magicpath-path="SubjectsPage.tsx">
+                    <div className="flex items-center gap-2" data-magicpath-id="146" data-magicpath-path="SubjectsPage.tsx">
+                      <Calendar className="w-4 h-4 text-slate-600" data-magicpath-id="147" data-magicpath-path="SubjectsPage.tsx" />
+                      <span data-magicpath-id="148" data-magicpath-path="SubjectsPage.tsx">Test Date</span>
+                      <span className="text-slate-400 font-normal" data-magicpath-id="149" data-magicpath-path="SubjectsPage.tsx">(Optional)</span>
+                    </div>
+                  </label>
+                  <input id="test-date" type="date" value={newSubject.testDate} onChange={e => setNewSubject({
+                ...newSubject,
+                testDate: e.target.value
+              })} className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all" data-magicpath-id="150" data-magicpath-path="SubjectsPage.tsx" />
+                  <p className="text-xs text-slate-500 mt-1.5" data-magicpath-id="151" data-magicpath-path="SubjectsPage.tsx">Set a target date for your upcoming test or exam</p>
+                </div>
+
+                {/* Teacher Emphasis */}
+                <div data-magicpath-id="152" data-magicpath-path="SubjectsPage.tsx">
+                  <label htmlFor="teacher-emphasis" className="block text-sm font-bold text-slate-900 mb-2" data-magicpath-id="153" data-magicpath-path="SubjectsPage.tsx">
+                    <div className="flex items-center gap-2" data-magicpath-id="154" data-magicpath-path="SubjectsPage.tsx">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <span data-magicpath-id="155" data-magicpath-path="SubjectsPage.tsx">Teacher Emphasis</span>
+                      <span className="text-slate-400 font-normal" data-magicpath-id="156" data-magicpath-path="SubjectsPage.tsx">(Optional)</span>
+                    </div>
+                  </label>
+                  <textarea id="teacher-emphasis" value={newSubject.teacherEmphasis} onChange={e => setNewSubject({
+                ...newSubject,
+                teacherEmphasis: e.target.value
+              })} placeholder="What does your teacher emphasize? What topics are most important?" rows={4} className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none" data-magicpath-id="157" data-magicpath-path="SubjectsPage.tsx" />
+                  
+                  {/* Examples Section */}
+                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg" data-magicpath-id="158" data-magicpath-path="SubjectsPage.tsx">
+                    <p className="text-xs font-semibold text-amber-900 mb-2 flex items-center gap-1.5" data-magicpath-id="159" data-magicpath-path="SubjectsPage.tsx">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Example teacher emphasis points:
+                    </p>
+                    <div className="space-y-1.5" data-magicpath-id="160" data-magicpath-path="SubjectsPage.tsx">
+                      {exampleEmphases.map((example, idx) => <button key={idx} type="button" onClick={() => setNewSubject({
+                    ...newSubject,
+                    teacherEmphasis: example
+                  })} className="block w-full text-left px-2.5 py-1.5 text-xs text-slate-700 bg-white hover:bg-amber-100 rounded-md transition-colors border border-amber-200/50" data-magicpath-id="161" data-magicpath-path="SubjectsPage.tsx">
+                          • {example}
+                        </button>)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex-shrink-0 px-6 py-4 border-t border-slate-200 bg-slate-50" data-magicpath-id="162" data-magicpath-path="SubjectsPage.tsx">
+              <div className="flex gap-3" data-magicpath-id="163" data-magicpath-path="SubjectsPage.tsx">
+                <button onClick={() => setIsAddSubjectOpen(false)} className="flex-1 px-4 py-3 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 active:scale-95 transition-all" data-magicpath-id="164" data-magicpath-path="SubjectsPage.tsx">
+                  Cancel
+                </button>
+                <button onClick={handleAddSubject} disabled={!newSubject.name.trim()} className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100" data-magicpath-id="165" data-magicpath-path="SubjectsPage.tsx">
+                  Add Subject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>}
     </div>;
 };
