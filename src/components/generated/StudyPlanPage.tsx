@@ -381,17 +381,17 @@ export const StudyPlanPage = ({
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-  return <div className="h-full overflow-y-auto pb-4" data-magicpath-id="0" data-magicpath-path="StudyPlanPage.tsx">
+  return <div className="h-full overflow-y-auto pb-4">
       {/* Header Section */}
-      <div className="px-4 py-4 lg:px-8 lg:py-6 bg-gradient-to-br from-slate-50 to-indigo-50/30 border-b border-slate-200/60" data-magicpath-id="1" data-magicpath-path="StudyPlanPage.tsx">
-        <div className="max-w-7xl mx-auto" data-magicpath-id="2" data-magicpath-path="StudyPlanPage.tsx">
+      <div className="px-4 py-4 lg:px-8 lg:py-6 bg-gradient-to-br from-slate-50 to-indigo-50/30 border-b border-slate-200/60">
+        <div className="max-w-7xl mx-auto">
           {/* Subject Selector - Mobile Horizontal Scroll */}
-          <div className="lg:hidden mb-4 -mx-4 px-4 overflow-x-auto hide-scrollbar" data-magicpath-id="3" data-magicpath-path="StudyPlanPage.tsx">
-            <div className="flex gap-2 pb-1" data-magicpath-id="4" data-magicpath-path="StudyPlanPage.tsx">
-              {mockSubjects.map(subject => <button key={subject.id} onClick={() => setSelectedSubject(subject)} className={`flex-shrink-0 px-3 py-2 rounded-xl transition-all active:scale-95 ${selectedSubject.id === subject.id ? `bg-gradient-to-r ${subject.color} text-white shadow-md` : 'bg-white border-2 border-slate-200 text-slate-700'}`} data-magicpath-id="5" data-magicpath-path="StudyPlanPage.tsx">
-                  <div className="flex items-center gap-2" data-magicpath-id="6" data-magicpath-path="StudyPlanPage.tsx">
-                    <Book className="w-4 h-4" data-magicpath-id="7" data-magicpath-path="StudyPlanPage.tsx" />
-                    <span className="text-sm font-semibold whitespace-nowrap" data-magicpath-id="8" data-magicpath-path="StudyPlanPage.tsx">
+          <div className="lg:hidden mb-4 -mx-4 px-4 overflow-x-auto hide-scrollbar">
+            <div className="flex gap-2 pb-1">
+              {mockSubjects.map(subject => <button key={subject.id} onClick={() => setSelectedSubject(subject)} className={`flex-shrink-0 px-3 py-2 rounded-xl transition-all active:scale-95 ${selectedSubject.id === subject.id ? `bg-gradient-to-r ${subject.color} text-white shadow-md` : 'bg-white border-2 border-slate-200 text-slate-700'}`}>
+                  <div className="flex items-center gap-2">
+                    <Book className="w-4 h-4" />
+                    <span className="text-sm font-semibold whitespace-nowrap">
                       {subject.name}
                     </span>
                   </div>
@@ -400,20 +400,20 @@ export const StudyPlanPage = ({
           </div>
 
           {/* Header */}
-          <div className="flex items-start justify-between mb-4" data-magicpath-id="9" data-magicpath-path="StudyPlanPage.tsx">
-            <div data-magicpath-id="10" data-magicpath-path="StudyPlanPage.tsx">
-              <h1 className="text-2xl lg:text-4xl font-bold text-slate-900 mb-1 lg:mb-2" data-magicpath-id="11" data-magicpath-path="StudyPlanPage.tsx">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-2xl lg:text-4xl font-bold text-slate-900 mb-1 lg:mb-2">
                 Study Plan
               </h1>
-              <p className="text-sm lg:text-base text-slate-600" data-magicpath-id="12" data-magicpath-path="StudyPlanPage.tsx">
+              <p className="text-sm lg:text-base text-slate-600">
                 {selectedSubject.name} • {selectedSubject.daysUntilTest} days until test
               </p>
             </div>
             
             {/* Desktop Subject Selector */}
-            <div className="hidden lg:block" data-magicpath-id="13" data-magicpath-path="StudyPlanPage.tsx">
-              <select value={selectedSubject.id} onChange={e => setSelectedSubject(mockSubjects.find(s => s.id === e.target.value)!)} className="px-4 py-3 bg-white border-2 border-slate-200 rounded-xl font-semibold text-slate-900 cursor-pointer hover:border-blue-400 transition-all" data-magicpath-id="14" data-magicpath-path="StudyPlanPage.tsx">
-                {mockSubjects.map(subject => <option key={subject.id} value={subject.id} data-magicpath-id="15" data-magicpath-path="StudyPlanPage.tsx">
+            <div className="hidden lg:block">
+              <select value={selectedSubject.id} onChange={e => setSelectedSubject(mockSubjects.find(s => s.id === e.target.value)!)} className="px-4 py-3 bg-white border-2 border-slate-200 rounded-xl font-semibold text-slate-900 cursor-pointer hover:border-blue-400 transition-all">
+                {mockSubjects.map(subject => <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>)}
               </select>
@@ -421,85 +421,85 @@ export const StudyPlanPage = ({
           </div>
 
           {/* Key Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4" data-magicpath-id="16" data-magicpath-path="StudyPlanPage.tsx">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             {/* Mastery */}
-            <div className="bg-white rounded-xl p-3 lg:p-4 border-2 border-slate-200" data-magicpath-id="17" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="flex items-center gap-2 mb-2" data-magicpath-id="18" data-magicpath-path="StudyPlanPage.tsx">
-                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getMasteryBg(selectedSubject.mastery)} flex items-center justify-center`} data-magicpath-id="19" data-magicpath-path="StudyPlanPage.tsx">
-                  <Brain className="w-4 h-4 text-white" data-magicpath-id="20" data-magicpath-path="StudyPlanPage.tsx" />
+            <div className="bg-white rounded-xl p-3 lg:p-4 border-2 border-slate-200">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getMasteryBg(selectedSubject.mastery)} flex items-center justify-center`}>
+                  <Brain className="w-4 h-4 text-white" />
                 </div>
-                <p className="text-xs font-semibold text-slate-600" data-magicpath-id="21" data-magicpath-path="StudyPlanPage.tsx">Mastery</p>
+                <p className="text-xs font-semibold text-slate-600">Mastery</p>
               </div>
-              <p className={`text-2xl lg:text-3xl font-bold ${getMasteryColor(selectedSubject.mastery)}`} data-magicpath-id="22" data-magicpath-path="StudyPlanPage.tsx">
+              <p className={`text-2xl lg:text-3xl font-bold ${getMasteryColor(selectedSubject.mastery)}`}>
                 {selectedSubject.mastery}%
               </p>
             </div>
 
             {/* Passing Chance */}
-            <div className="bg-white rounded-xl p-3 lg:p-4 border-2 border-slate-200" data-magicpath-id="23" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="flex items-center gap-2 mb-2" data-magicpath-id="24" data-magicpath-path="StudyPlanPage.tsx">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center" data-magicpath-id="25" data-magicpath-path="StudyPlanPage.tsx">
-                  <Target className="w-4 h-4 text-white" data-magicpath-id="26" data-magicpath-path="StudyPlanPage.tsx" />
+            <div className="bg-white rounded-xl p-3 lg:p-4 border-2 border-slate-200">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                  <Target className="w-4 h-4 text-white" />
                 </div>
-                <p className="text-xs font-semibold text-slate-600" data-magicpath-id="27" data-magicpath-path="StudyPlanPage.tsx">Pass %</p>
+                <p className="text-xs font-semibold text-slate-600">Pass %</p>
               </div>
-              <p className="text-2xl lg:text-3xl font-bold text-green-600" data-magicpath-id="28" data-magicpath-path="StudyPlanPage.tsx">
+              <p className="text-2xl lg:text-3xl font-bold text-green-600">
                 {selectedSubject.passingChance}%
               </p>
             </div>
 
             {/* Days Until Test */}
-            <div className="bg-white rounded-xl p-3 lg:p-4 border-2 border-slate-200" data-magicpath-id="29" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="flex items-center gap-2 mb-2" data-magicpath-id="30" data-magicpath-path="StudyPlanPage.tsx">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center" data-magicpath-id="31" data-magicpath-path="StudyPlanPage.tsx">
-                  <Calendar className="w-4 h-4 text-white" data-magicpath-id="32" data-magicpath-path="StudyPlanPage.tsx" />
+            <div className="bg-white rounded-xl p-3 lg:p-4 border-2 border-slate-200">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-white" />
                 </div>
-                <p className="text-xs font-semibold text-slate-600" data-magicpath-id="33" data-magicpath-path="StudyPlanPage.tsx">Days Left</p>
+                <p className="text-xs font-semibold text-slate-600">Days Left</p>
               </div>
-              <p className="text-2xl lg:text-3xl font-bold text-orange-600" data-magicpath-id="34" data-magicpath-path="StudyPlanPage.tsx">
+              <p className="text-2xl lg:text-3xl font-bold text-orange-600">
                 {selectedSubject.daysUntilTest}
               </p>
             </div>
 
             {/* Time Remaining */}
-            <div className="bg-white rounded-xl p-3 lg:p-4 border-2 border-slate-200" data-magicpath-id="35" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="flex items-center gap-2 mb-2" data-magicpath-id="36" data-magicpath-path="StudyPlanPage.tsx">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center" data-magicpath-id="37" data-magicpath-path="StudyPlanPage.tsx">
-                  <Clock className="w-4 h-4 text-white" data-magicpath-id="38" data-magicpath-path="StudyPlanPage.tsx" />
+            <div className="bg-white rounded-xl p-3 lg:p-4 border-2 border-slate-200">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-white" />
                 </div>
-                <p className="text-xs font-semibold text-slate-600" data-magicpath-id="39" data-magicpath-path="StudyPlanPage.tsx">Est. Time</p>
+                <p className="text-xs font-semibold text-slate-600">Est. Time</p>
               </div>
-              <p className="text-2xl lg:text-3xl font-bold text-blue-600" data-magicpath-id="40" data-magicpath-path="StudyPlanPage.tsx">
+              <p className="text-2xl lg:text-3xl font-bold text-blue-600">
                 {estimatedTimeRemaining}m
               </p>
             </div>
           </div>
 
           {/* Progress Overview */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 lg:p-5" data-magicpath-id="41" data-magicpath-path="StudyPlanPage.tsx">
-            <div className="flex items-center justify-between mb-3" data-magicpath-id="42" data-magicpath-path="StudyPlanPage.tsx">
-              <div data-magicpath-id="43" data-magicpath-path="StudyPlanPage.tsx">
-                <h3 className="text-base lg:text-lg font-bold text-slate-900 mb-1" data-magicpath-id="44" data-magicpath-path="StudyPlanPage.tsx">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 lg:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-base lg:text-lg font-bold text-slate-900 mb-1">
                   Today's Progress
                 </h3>
-                <p className="text-sm text-slate-600" data-magicpath-id="45" data-magicpath-path="StudyPlanPage.tsx">
+                <p className="text-sm text-slate-600">
                   {completedTasks} of {totalTasks} tasks completed
                 </p>
               </div>
-              <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-blue-200" data-magicpath-id="46" data-magicpath-path="StudyPlanPage.tsx">
-                <Trophy className="w-5 h-5 text-amber-500" data-magicpath-id="47" data-magicpath-path="StudyPlanPage.tsx" />
-                <span className="text-lg font-bold text-slate-900" data-magicpath-id="48" data-magicpath-path="StudyPlanPage.tsx">
+              <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-blue-200">
+                <Trophy className="w-5 h-5 text-amber-500" />
+                <span className="text-lg font-bold text-slate-900">
                   {completedTasks}
                 </span>
               </div>
             </div>
 
-            <div className="relative h-3 bg-blue-100 rounded-full overflow-hidden mb-2" data-magicpath-id="49" data-magicpath-path="StudyPlanPage.tsx">
+            <div className="relative h-3 bg-blue-100 rounded-full overflow-hidden mb-2">
               <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500" style={{
               width: `${progressPercentage}%`
-            }} data-magicpath-id="50" data-magicpath-path="StudyPlanPage.tsx" />
+            }} />
             </div>
-            <p className="text-xs text-slate-600 font-medium" data-magicpath-id="51" data-magicpath-path="StudyPlanPage.tsx">
+            <p className="text-xs text-slate-600 font-medium">
               {progressPercentage.toFixed(0)}% Complete
             </p>
           </div>
@@ -507,51 +507,51 @@ export const StudyPlanPage = ({
       </div>
 
       {/* Main Content */}
-      <div className="px-4 py-4 lg:px-8 lg:py-6" data-magicpath-id="52" data-magicpath-path="StudyPlanPage.tsx">
-        <div className="max-w-7xl mx-auto space-y-6" data-magicpath-id="53" data-magicpath-path="StudyPlanPage.tsx">
+      <div className="px-4 py-4 lg:px-8 lg:py-6">
+        <div className="max-w-7xl mx-auto space-y-6">
           {/* Weak Topics Section */}
-          <section data-magicpath-id="54" data-magicpath-path="StudyPlanPage.tsx">
-            <div className="flex items-center justify-between mb-4" data-magicpath-id="55" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="flex items-center gap-2" data-magicpath-id="56" data-magicpath-path="StudyPlanPage.tsx">
-                <AlertCircle className="w-5 h-5 text-red-600" data-magicpath-id="57" data-magicpath-path="StudyPlanPage.tsx" />
-                <h2 className="text-lg lg:text-xl font-bold text-slate-900" data-magicpath-id="58" data-magicpath-path="StudyPlanPage.tsx">
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <h2 className="text-lg lg:text-xl font-bold text-slate-900">
                   Focus Areas
                 </h2>
               </div>
-              <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1" data-magicpath-id="59" data-magicpath-path="StudyPlanPage.tsx">
+              <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                 View All
-                <ChevronRight className="w-4 h-4" data-magicpath-id="60" data-magicpath-path="StudyPlanPage.tsx" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3" data-magicpath-id="61" data-magicpath-path="StudyPlanPage.tsx">
-              {mockTopics.filter(t => t.mastery < 75).slice(0, 3).map(topic => <div key={topic.id} className="bg-white rounded-xl border-2 border-slate-200 p-4 hover:border-blue-300 transition-all" data-magicpath-id="62" data-magicpath-path="StudyPlanPage.tsx">
-                    <div className="flex items-start justify-between mb-3" data-magicpath-id="63" data-magicpath-path="StudyPlanPage.tsx">
-                      <h3 className="font-bold text-slate-900 text-sm" data-magicpath-id="64" data-magicpath-path="StudyPlanPage.tsx">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {mockTopics.filter(t => t.mastery < 75).slice(0, 3).map(topic => <div key={topic.id} className="bg-white rounded-xl border-2 border-slate-200 p-4 hover:border-blue-300 transition-all">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-bold text-slate-900 text-sm">
                         {topic.name}
                       </h3>
-                      <div className={`px-2 py-1 rounded-lg text-xs font-bold ${topic.trend === 'up' ? 'bg-green-100 text-green-700' : topic.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`} data-magicpath-id="65" data-magicpath-path="StudyPlanPage.tsx">
+                      <div className={`px-2 py-1 rounded-lg text-xs font-bold ${topic.trend === 'up' ? 'bg-green-100 text-green-700' : topic.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}>
                         {topic.trend === 'up' ? '↗' : topic.trend === 'down' ? '↘' : '→'}
                       </div>
                     </div>
 
-                    <div className="space-y-2" data-magicpath-id="66" data-magicpath-path="StudyPlanPage.tsx">
-                      <div className="flex items-center justify-between text-sm" data-magicpath-id="67" data-magicpath-path="StudyPlanPage.tsx">
-                        <span className="text-slate-600" data-magicpath-id="68" data-magicpath-path="StudyPlanPage.tsx">Mastery</span>
-                        <span className={`font-bold ${getMasteryColor(topic.mastery)}`} data-magicpath-id="69" data-magicpath-path="StudyPlanPage.tsx">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600">Mastery</span>
+                        <span className={`font-bold ${getMasteryColor(topic.mastery)}`}>
                           {topic.mastery}%
                         </span>
                       </div>
                       
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden" data-magicpath-id="70" data-magicpath-path="StudyPlanPage.tsx">
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div className={`h-full bg-gradient-to-r ${getMasteryBg(topic.mastery)} rounded-full transition-all`} style={{
                     width: `${topic.mastery}%`
-                  }} data-magicpath-id="71" data-magicpath-path="StudyPlanPage.tsx" />
+                  }} />
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-slate-600" data-magicpath-id="72" data-magicpath-path="StudyPlanPage.tsx">
-                        <span data-magicpath-id="73" data-magicpath-path="StudyPlanPage.tsx">{topic.quizzesTaken} quizzes</span>
-                        <span data-magicpath-id="74" data-magicpath-path="StudyPlanPage.tsx">Last: {topic.lastQuizScore}%</span>
+                      <div className="flex items-center justify-between text-xs text-slate-600">
+                        <span>{topic.quizzesTaken} quizzes</span>
+                        <span>Last: {topic.lastQuizScore}%</span>
                       </div>
                     </div>
                   </div>)}
@@ -559,74 +559,74 @@ export const StudyPlanPage = ({
           </section>
 
           {/* Study Tasks */}
-          <section data-magicpath-id="75" data-magicpath-path="StudyPlanPage.tsx">
-            <div className="flex items-center justify-between mb-4" data-magicpath-id="76" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="flex items-center gap-2" data-magicpath-id="77" data-magicpath-path="StudyPlanPage.tsx">
-                <CheckCircle2 className="w-5 h-5 text-blue-600" data-magicpath-id="78" data-magicpath-path="StudyPlanPage.tsx" />
-                <h2 className="text-lg lg:text-xl font-bold text-slate-900" data-magicpath-id="79" data-magicpath-path="StudyPlanPage.tsx">
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg lg:text-xl font-bold text-slate-900">
                   Study Tasks
                 </h2>
               </div>
-              <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1" data-magicpath-id="80" data-magicpath-path="StudyPlanPage.tsx">
+              <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
                 Regenerate
-                <RotateCcw className="w-4 h-4" data-magicpath-id="81" data-magicpath-path="StudyPlanPage.tsx" />
+                <RotateCcw className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3" data-magicpath-id="82" data-magicpath-path="StudyPlanPage.tsx">
+            <div className="space-y-3">
               {tasks.map(task => {
               const TaskIcon = getTaskIcon(task.type);
-              return <div key={task.id} className={`bg-white rounded-xl border-2 p-4 lg:p-5 transition-all ${task.completed ? 'border-green-200 bg-green-50/30' : 'border-slate-200 hover:border-blue-300 hover:shadow-md'}`} data-magicpath-id="83" data-magicpath-path="StudyPlanPage.tsx">
-                    <div className="flex items-start gap-3" data-magicpath-id="84" data-magicpath-path="StudyPlanPage.tsx">
+              return <div key={task.id} className={`bg-white rounded-xl border-2 p-4 lg:p-5 transition-all ${task.completed ? 'border-green-200 bg-green-50/30' : 'border-slate-200 hover:border-blue-300 hover:shadow-md'}`}>
+                    <div className="flex items-start gap-3">
                       {/* Checkbox */}
-                      <button onClick={() => task.completed ? null : handleCompleteTask(task.id, !task.requiresVerification)} disabled={task.completed} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${task.completed ? 'bg-green-600 border-green-600 cursor-default' : 'border-slate-300 hover:border-blue-500'}`} data-magicpath-id="85" data-magicpath-path="StudyPlanPage.tsx">
-                        {task.completed && <CheckCircle2 className="w-5 h-5 text-white" data-magicpath-id="86" data-magicpath-path="StudyPlanPage.tsx" />}
+                      <button onClick={() => task.completed ? null : handleCompleteTask(task.id, !task.requiresVerification)} disabled={task.completed} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${task.completed ? 'bg-green-600 border-green-600 cursor-default' : 'border-slate-300 hover:border-blue-500'}`}>
+                        {task.completed && <CheckCircle2 className="w-5 h-5 text-white" />}
                       </button>
 
                       {/* Task Icon */}
-                      <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br ${getTaskColor(task.type)} flex items-center justify-center flex-shrink-0 shadow-sm`} data-magicpath-id="87" data-magicpath-path="StudyPlanPage.tsx">
-                        <TaskIcon className="w-5 h-5 lg:w-6 lg:h-6 text-white" data-magicpath-id="88" data-magicpath-path="StudyPlanPage.tsx" />
+                      <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br ${getTaskColor(task.type)} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                        <TaskIcon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
                       </div>
 
                       {/* Task Info */}
-                      <div className="flex-1 min-w-0" data-magicpath-id="89" data-magicpath-path="StudyPlanPage.tsx">
-                        <div className="flex items-start gap-2 mb-2" data-magicpath-id="90" data-magicpath-path="StudyPlanPage.tsx">
-                          <h3 className={`font-bold text-slate-900 text-sm lg:text-base ${task.completed ? 'line-through text-slate-500' : ''}`} data-magicpath-id="91" data-magicpath-path="StudyPlanPage.tsx">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-2 mb-2">
+                          <h3 className={`font-bold text-slate-900 text-sm lg:text-base ${task.completed ? 'line-through text-slate-500' : ''}`}>
                             {task.title}
                           </h3>
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getPriorityColor(task.priority)} flex-shrink-0`} data-magicpath-id="92" data-magicpath-path="StudyPlanPage.tsx">
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold border ${getPriorityColor(task.priority)} flex-shrink-0`}>
                             {task.priority}
                           </span>
                         </div>
 
-                        <p className="text-sm text-slate-600 mb-3" data-magicpath-id="93" data-magicpath-path="StudyPlanPage.tsx">
+                        <p className="text-sm text-slate-600 mb-3">
                           {task.description}
                         </p>
 
-                        <div className="flex flex-wrap items-center gap-2 text-xs" data-magicpath-id="94" data-magicpath-path="StudyPlanPage.tsx">
-                          <span className="flex items-center gap-1 text-slate-600" data-magicpath-id="95" data-magicpath-path="StudyPlanPage.tsx">
-                            <Clock className="w-3.5 h-3.5" data-magicpath-id="96" data-magicpath-path="StudyPlanPage.tsx" />
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <span className="flex items-center gap-1 text-slate-600">
+                            <Clock className="w-3.5 h-3.5" />
                             {task.estimatedTime} min
                           </span>
-                          <span className="flex items-center gap-1 text-slate-600" data-magicpath-id="97" data-magicpath-path="StudyPlanPage.tsx">
-                            <BookOpen className="w-3.5 h-3.5" data-magicpath-id="98" data-magicpath-path="StudyPlanPage.tsx" />
+                          <span className="flex items-center gap-1 text-slate-600">
+                            <BookOpen className="w-3.5 h-3.5" />
                             {task.topic}
                           </span>
-                          {task.verified && <span className="flex items-center gap-1 text-green-600 font-semibold" data-magicpath-id="99" data-magicpath-path="StudyPlanPage.tsx">
-                              <CheckCheck className="w-3.5 h-3.5" data-magicpath-id="100" data-magicpath-path="StudyPlanPage.tsx" />
+                          {task.verified && <span className="flex items-center gap-1 text-green-600 font-semibold">
+                              <CheckCheck className="w-3.5 h-3.5" />
                               Verified
                             </span>}
-                          {taskTimers[task.id] > 0 && <span className="flex items-center gap-1 text-blue-600 font-semibold" data-magicpath-id="101" data-magicpath-path="StudyPlanPage.tsx">
-                              <Timer className="w-3.5 h-3.5" data-magicpath-id="102" data-magicpath-path="StudyPlanPage.tsx" />
+                          {taskTimers[task.id] > 0 && <span className="flex items-center gap-1 text-blue-600 font-semibold">
+                              <Timer className="w-3.5 h-3.5" />
                               {formatTime(taskTimers[task.id])}
                             </span>}
                         </div>
                       </div>
 
                       {/* Action Button */}
-                      {!task.completed && <button onClick={() => handleStartTask(task)} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 flex-shrink-0" data-magicpath-id="103" data-magicpath-path="StudyPlanPage.tsx">
-                          <Play className="w-4 h-4" data-magicpath-id="104" data-magicpath-path="StudyPlanPage.tsx" />
-                          <span className="hidden sm:inline" data-magicpath-id="105" data-magicpath-path="StudyPlanPage.tsx">Start</span>
+                      {!task.completed && <button onClick={() => handleStartTask(task)} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 flex-shrink-0">
+                          <Play className="w-4 h-4" />
+                          <span className="hidden sm:inline">Start</span>
                         </button>}
                     </div>
                   </div>;
@@ -635,23 +635,23 @@ export const StudyPlanPage = ({
           </section>
 
           {/* Study Tips */}
-          <section className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-5 lg:p-6" data-magicpath-id="106" data-magicpath-path="StudyPlanPage.tsx">
-            <div className="flex items-start gap-3" data-magicpath-id="107" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center flex-shrink-0" data-magicpath-id="108" data-magicpath-path="StudyPlanPage.tsx">
-                <Lightbulb className="w-6 h-6 text-white" data-magicpath-id="109" data-magicpath-path="StudyPlanPage.tsx" />
+          <section className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-5 lg:p-6">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center flex-shrink-0">
+                <Lightbulb className="w-6 h-6 text-white" />
               </div>
-              <div data-magicpath-id="110" data-magicpath-path="StudyPlanPage.tsx">
-                <h3 className="text-lg font-bold text-slate-900 mb-2" data-magicpath-id="111" data-magicpath-path="StudyPlanPage.tsx">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">
                   Smart Study Tip
                 </h3>
-                <p className="text-sm text-slate-700 mb-3" data-magicpath-id="112" data-magicpath-path="StudyPlanPage.tsx">
-                  Based on your quiz performance, focus on <strong data-magicpath-id="113" data-magicpath-path="StudyPlanPage.tsx">World War II</strong> today. 
+                <p className="text-sm text-slate-700 mb-3">
+                  Based on your quiz performance, focus on <strong>World War II</strong> today. 
                   Spend 30-45 minutes reviewing key events and dates. Your mastery increased by 12% 
                   after the last study session!
                 </p>
-                <div className="flex items-center gap-2" data-magicpath-id="114" data-magicpath-path="StudyPlanPage.tsx">
+                <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-600" />
-                  <span className="text-xs font-semibold text-amber-800" data-magicpath-id="115" data-magicpath-path="StudyPlanPage.tsx">
+                  <span className="text-xs font-semibold text-amber-800">
                     AI-Generated Recommendation
                   </span>
                 </div>
@@ -662,64 +662,64 @@ export const StudyPlanPage = ({
       </div>
 
       {/* Flashcards Modal */}
-      {showFlashcardsModal && activeTask && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-300 p-4" onClick={() => setShowFlashcardsModal(false)} data-magicpath-id="116" data-magicpath-path="StudyPlanPage.tsx">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()} data-magicpath-id="117" data-magicpath-path="StudyPlanPage.tsx">
+      {showFlashcardsModal && activeTask && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-300 p-4" onClick={() => setShowFlashcardsModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="p-4 lg:p-6 border-b border-slate-200" data-magicpath-id="118" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="flex items-center justify-between mb-4" data-magicpath-id="119" data-magicpath-path="StudyPlanPage.tsx">
-                <div data-magicpath-id="120" data-magicpath-path="StudyPlanPage.tsx">
-                  <h2 className="text-xl lg:text-2xl font-bold text-slate-900" data-magicpath-id="121" data-magicpath-path="StudyPlanPage.tsx">
+            <div className="p-4 lg:p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl lg:text-2xl font-bold text-slate-900">
                     Flashcard Review
                   </h2>
-                  <p className="text-sm text-slate-600 mt-1" data-magicpath-id="122" data-magicpath-path="StudyPlanPage.tsx">
+                  <p className="text-sm text-slate-600 mt-1">
                     {activeTask.topic}
                   </p>
                 </div>
-                <button onClick={() => setShowFlashcardsModal(false)} className="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all" data-magicpath-id="123" data-magicpath-path="StudyPlanPage.tsx">
-                  <X className="w-5 h-5" data-magicpath-id="124" data-magicpath-path="StudyPlanPage.tsx" />
+                <button onClick={() => setShowFlashcardsModal(false)} className="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="flex items-center justify-between" data-magicpath-id="125" data-magicpath-path="StudyPlanPage.tsx">
-                <span className="text-sm font-semibold text-slate-600" data-magicpath-id="126" data-magicpath-path="StudyPlanPage.tsx">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-600">
                   Card {currentFlashcardIndex + 1} of {flashcards.length}
                 </span>
-                <div className="flex gap-1" data-magicpath-id="127" data-magicpath-path="StudyPlanPage.tsx">
-                  {flashcards.map((_, idx) => <div key={idx} className={`w-2 h-2 rounded-full ${idx === currentFlashcardIndex ? 'bg-blue-600' : idx < currentFlashcardIndex ? 'bg-green-600' : 'bg-slate-200'}`} data-magicpath-id="128" data-magicpath-path="StudyPlanPage.tsx" />)}
+                <div className="flex gap-1">
+                  {flashcards.map((_, idx) => <div key={idx} className={`w-2 h-2 rounded-full ${idx === currentFlashcardIndex ? 'bg-blue-600' : idx < currentFlashcardIndex ? 'bg-green-600' : 'bg-slate-200'}`} />)}
                 </div>
               </div>
             </div>
 
             {/* Flashcard */}
-            <div className="p-6 lg:p-8" data-magicpath-id="129" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="relative min-h-[300px] bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border-2 border-blue-200 cursor-pointer transition-all hover:shadow-lg" onClick={() => setShowAnswer(!showAnswer)} data-magicpath-id="130" data-magicpath-path="StudyPlanPage.tsx">
-                <div className="text-center" data-magicpath-id="131" data-magicpath-path="StudyPlanPage.tsx">
-                  <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-4" data-magicpath-id="132" data-magicpath-path="StudyPlanPage.tsx">
+            <div className="p-6 lg:p-8">
+              <div className="relative min-h-[300px] bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border-2 border-blue-200 cursor-pointer transition-all hover:shadow-lg" onClick={() => setShowAnswer(!showAnswer)}>
+                <div className="text-center">
+                  <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-4">
                     {showAnswer ? 'Answer' : 'Question'}
                   </p>
-                  <p className="text-lg lg:text-xl font-semibold text-slate-900 leading-relaxed" data-magicpath-id="133" data-magicpath-path="StudyPlanPage.tsx">
+                  <p className="text-lg lg:text-xl font-semibold text-slate-900 leading-relaxed">
                     {showAnswer ? flashcards[currentFlashcardIndex].back : flashcards[currentFlashcardIndex].front}
                   </p>
                 </div>
 
-                <div className="absolute bottom-4 right-4 text-xs text-slate-500 font-medium" data-magicpath-id="134" data-magicpath-path="StudyPlanPage.tsx">
+                <div className="absolute bottom-4 right-4 text-xs text-slate-500 font-medium">
                   {showAnswer ? 'Click to see question' : 'Click to reveal answer'}
                 </div>
               </div>
 
               {/* Confidence Buttons */}
-              {showAnswer && <div className="mt-6 space-y-3" data-magicpath-id="135" data-magicpath-path="StudyPlanPage.tsx">
-                  <p className="text-sm font-semibold text-slate-700 text-center" data-magicpath-id="136" data-magicpath-path="StudyPlanPage.tsx">
+              {showAnswer && <div className="mt-6 space-y-3">
+                  <p className="text-sm font-semibold text-slate-700 text-center">
                     How confident are you?
                   </p>
-                  <div className="grid grid-cols-3 gap-3" data-magicpath-id="137" data-magicpath-path="StudyPlanPage.tsx">
-                    <button onClick={() => handleFlashcardConfidence('low')} className="px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-xl transition-all active:scale-95" data-magicpath-id="138" data-magicpath-path="StudyPlanPage.tsx">
+                  <div className="grid grid-cols-3 gap-3">
+                    <button onClick={() => handleFlashcardConfidence('low')} className="px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-xl transition-all active:scale-95">
                       😰 Need Review
                     </button>
-                    <button onClick={() => handleFlashcardConfidence('medium')} className="px-4 py-3 bg-amber-100 hover:bg-amber-200 text-amber-700 font-semibold rounded-xl transition-all active:scale-95" data-magicpath-id="139" data-magicpath-path="StudyPlanPage.tsx">
+                    <button onClick={() => handleFlashcardConfidence('medium')} className="px-4 py-3 bg-amber-100 hover:bg-amber-200 text-amber-700 font-semibold rounded-xl transition-all active:scale-95">
                       🤔 Somewhat
                     </button>
-                    <button onClick={() => handleFlashcardConfidence('high')} className="px-4 py-3 bg-green-100 hover:bg-green-200 text-green-700 font-semibold rounded-xl transition-all active:scale-95" data-magicpath-id="140" data-magicpath-path="StudyPlanPage.tsx">
+                    <button onClick={() => handleFlashcardConfidence('high')} className="px-4 py-3 bg-green-100 hover:bg-green-200 text-green-700 font-semibold rounded-xl transition-all active:scale-95">
                       ✅ Got it!
                     </button>
                   </div>
@@ -733,78 +733,78 @@ export const StudyPlanPage = ({
       setShowTaskModal(false);
       setActiveTask(null);
       setIsTimerRunning(false);
-    }} data-magicpath-id="141" data-magicpath-path="StudyPlanPage.tsx">
-          <div className="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full md:max-w-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom md:zoom-in-95 duration-300" onClick={e => e.stopPropagation()} data-magicpath-id="142" data-magicpath-path="StudyPlanPage.tsx">
-            <div className="p-4 lg:p-6" data-magicpath-id="143" data-magicpath-path="StudyPlanPage.tsx">
-              <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4 md:hidden" data-magicpath-id="144" data-magicpath-path="StudyPlanPage.tsx"></div>
+    }}>
+          <div className="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full md:max-w-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom md:zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+            <div className="p-4 lg:p-6">
+              <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4 md:hidden"></div>
 
-              <div className="flex items-center justify-between mb-6" data-magicpath-id="145" data-magicpath-path="StudyPlanPage.tsx">
-                <div data-magicpath-id="146" data-magicpath-path="StudyPlanPage.tsx">
-                  <h2 className="text-xl lg:text-2xl font-bold text-slate-900" data-magicpath-id="147" data-magicpath-path="StudyPlanPage.tsx">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl lg:text-2xl font-bold text-slate-900">
                     {activeTask.title}
                   </h2>
-                  <p className="text-sm text-slate-600 mt-1" data-magicpath-id="148" data-magicpath-path="StudyPlanPage.tsx">{activeTask.topic}</p>
+                  <p className="text-sm text-slate-600 mt-1">{activeTask.topic}</p>
                 </div>
                 <button onClick={() => {
               setShowTaskModal(false);
               setActiveTask(null);
               setIsTimerRunning(false);
-            }} className="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all" data-magicpath-id="149" data-magicpath-path="StudyPlanPage.tsx">
-                  <X className="w-5 h-5" data-magicpath-id="150" data-magicpath-path="StudyPlanPage.tsx" />
+            }} className="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="space-y-4" data-magicpath-id="151" data-magicpath-path="StudyPlanPage.tsx">
+              <div className="space-y-4">
                 {/* Task Description */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl" data-magicpath-id="152" data-magicpath-path="StudyPlanPage.tsx">
-                  <p className="text-sm text-slate-700" data-magicpath-id="153" data-magicpath-path="StudyPlanPage.tsx">{activeTask.description}</p>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-sm text-slate-700">{activeTask.description}</p>
                 </div>
 
                 {/* Study Timer */}
-                <div className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200" data-magicpath-id="154" data-magicpath-path="StudyPlanPage.tsx">
-                  <div className="text-center mb-4" data-magicpath-id="155" data-magicpath-path="StudyPlanPage.tsx">
-                    <p className="text-sm font-semibold text-slate-600 mb-2" data-magicpath-id="156" data-magicpath-path="StudyPlanPage.tsx">
+                <div className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200">
+                  <div className="text-center mb-4">
+                    <p className="text-sm font-semibold text-slate-600 mb-2">
                       Study Time
                     </p>
-                    <p className="text-5xl font-bold text-slate-900 font-mono" data-magicpath-id="157" data-magicpath-path="StudyPlanPage.tsx">
+                    <p className="text-5xl font-bold text-slate-900 font-mono">
                       {formatTime(currentTimerValue)}
                     </p>
                   </div>
                   
-                  <div className="flex gap-2" data-magicpath-id="158" data-magicpath-path="StudyPlanPage.tsx">
-                    <button onClick={toggleTimer} className={`flex-1 px-4 py-3 ${isTimerRunning ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-semibold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2`} data-magicpath-id="159" data-magicpath-path="StudyPlanPage.tsx">
+                  <div className="flex gap-2">
+                    <button onClick={toggleTimer} className={`flex-1 px-4 py-3 ${isTimerRunning ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-semibold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2`}>
                       {isTimerRunning ? <>
-                          <Pause className="w-4 h-4" data-magicpath-id="160" data-magicpath-path="StudyPlanPage.tsx" />
+                          <Pause className="w-4 h-4" />
                           Pause
                         </> : <>
-                          <Play className="w-4 h-4" data-magicpath-id="161" data-magicpath-path="StudyPlanPage.tsx" />
+                          <Play className="w-4 h-4" />
                           {currentTimerValue > 0 ? 'Resume' : 'Start'}
                         </>}
                     </button>
-                    <button onClick={resetTimer} className="px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition-all active:scale-95" title="Reset timer" data-magicpath-id="162" data-magicpath-path="StudyPlanPage.tsx">
-                      <RotateCcw className="w-4 h-4" data-magicpath-id="163" data-magicpath-path="StudyPlanPage.tsx" />
+                    <button onClick={resetTimer} className="px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition-all active:scale-95" title="Reset timer">
+                      <RotateCcw className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
                 {/* Completion Section */}
-                <div className="space-y-3" data-magicpath-id="164" data-magicpath-path="StudyPlanPage.tsx">
-                  {activeTask.requiresVerification && <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl" data-magicpath-id="165" data-magicpath-path="StudyPlanPage.tsx">
-                      <div className="flex items-start gap-2" data-magicpath-id="166" data-magicpath-path="StudyPlanPage.tsx">
-                        <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" data-magicpath-id="167" data-magicpath-path="StudyPlanPage.tsx" />
-                        <div data-magicpath-id="168" data-magicpath-path="StudyPlanPage.tsx">
-                          <p className="text-sm font-semibold text-amber-900 mb-1" data-magicpath-id="169" data-magicpath-path="StudyPlanPage.tsx">
+                <div className="space-y-3">
+                  {activeTask.requiresVerification && <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                      <div className="flex items-start gap-2">
+                        <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-amber-900 mb-1">
                             Verification Required
                           </p>
-                          <p className="text-sm text-amber-800" data-magicpath-id="170" data-magicpath-path="StudyPlanPage.tsx">
+                          <p className="text-sm text-amber-800">
                             After studying, we'll ask you a few quick questions to verify your understanding.
                           </p>
                         </div>
                       </div>
                     </div>}
 
-                  <button onClick={handleMarkCompleteAndVerify} className="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2" data-magicpath-id="171" data-magicpath-path="StudyPlanPage.tsx">
-                    <CheckCircle2 className="w-5 h-5" data-magicpath-id="172" data-magicpath-path="StudyPlanPage.tsx" />
+                  <button onClick={handleMarkCompleteAndVerify} className="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-5 h-5" />
                     {activeTask.requiresVerification ? 'Complete & Verify' : 'Mark Complete'}
                   </button>
                 </div>
@@ -814,8 +814,8 @@ export const StudyPlanPage = ({
         </div>}
 
       {/* Verification Quiz Modal */}
-      {showVerificationQuiz && activeTask && <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={e => e.stopPropagation()} data-magicpath-id="173" data-magicpath-path="StudyPlanPage.tsx">
-          <div className="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom md:zoom-in-95 duration-300" onClick={e => e.stopPropagation()} data-magicpath-id="174" data-magicpath-path="StudyPlanPage.tsx">
+      {showVerificationQuiz && activeTask && <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom md:zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
             <VerificationQuiz taskTitle={activeTask.title} topic={activeTask.topic} questions={mockVerificationQuestions} onComplete={handleVerificationComplete} onCancel={() => {
           setShowVerificationQuiz(false);
           // Go back to task modal if not a quiz type
@@ -825,11 +825,11 @@ export const StudyPlanPage = ({
             setShowTaskModal(false);
             setActiveTask(null);
           }
-        }} data-magicpath-id="175" data-magicpath-path="StudyPlanPage.tsx" />
+        }} />
           </div>
         </div>}
 
-      <style data-magicpath-id="176" data-magicpath-path="StudyPlanPage.tsx">{`
+      <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>

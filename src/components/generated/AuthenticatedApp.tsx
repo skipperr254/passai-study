@@ -70,29 +70,29 @@ const AuthenticatedAppContent = () => {
 
   // Render based on current view
   if (currentView === 'landing') {
-    return <LandingPage onGetStarted={() => setCurrentView('signup')} onSignIn={() => setCurrentView('signin')} data-magicpath-id="0" data-magicpath-path="AuthenticatedApp.tsx" />;
+    return <LandingPage onGetStarted={() => setCurrentView('signup')} onSignIn={() => setCurrentView('signin')} />;
   }
   if (currentView === 'signup') {
-    return <SignUpPage onSignUp={handleSignUp} onBackToLanding={() => setCurrentView('landing')} onGoToSignIn={() => setCurrentView('signin')} data-magicpath-id="1" data-magicpath-path="AuthenticatedApp.tsx" />;
+    return <SignUpPage onSignUp={handleSignUp} onBackToLanding={() => setCurrentView('landing')} onGoToSignIn={() => setCurrentView('signin')} />;
   }
   if (currentView === 'signin') {
-    return <SignInPage onSignIn={handleSignIn} onBackToLanding={() => setCurrentView('landing')} onGoToSignUp={() => setCurrentView('signup')} onForgotPassword={() => setCurrentView('forgotpassword')} serverError={error} isLoading={isLoading} data-magicpath-id="2" data-magicpath-path="AuthenticatedApp.tsx" />;
+    return <SignInPage onSignIn={handleSignIn} onBackToLanding={() => setCurrentView('landing')} onGoToSignUp={() => setCurrentView('signup')} onForgotPassword={() => setCurrentView('forgotpassword')} serverError={error} isLoading={isLoading} />;
   }
   if (currentView === 'forgotpassword') {
-    return <ForgotPasswordPage onBackToSignIn={() => setCurrentView('signin')} onBackToLanding={() => setCurrentView('landing')} data-magicpath-id="3" data-magicpath-path="AuthenticatedApp.tsx" />;
+    return <ForgotPasswordPage onBackToSignIn={() => setCurrentView('signin')} onBackToLanding={() => setCurrentView('landing')} />;
   }
   if (currentView === 'profile') {
-    return <ProfilePage onUpdateProfile={handleUpdateProfile} onBack={() => setCurrentView('app')} data-magicpath-id="4" data-magicpath-path="AuthenticatedApp.tsx" />;
+    return <ProfilePage onUpdateProfile={handleUpdateProfile} onBack={() => setCurrentView('app')} />;
   }
   if (currentView === 'settings') {
-    return <SettingsPage onLogout={handleLogout} onBack={() => setCurrentView('app')} data-magicpath-id="5" data-magicpath-path="AuthenticatedApp.tsx" />;
+    return <SettingsPage onLogout={handleLogout} onBack={() => setCurrentView('app')} />;
   }
 
   // Main app view with AppShell
-  return <AppShell userName={user?.name} onProfileClick={() => setCurrentView('profile')} onSettingsClick={() => setCurrentView('settings')} data-magicpath-id="6" data-magicpath-path="AuthenticatedApp.tsx" />;
+  return <AppShell userName={user?.name} onProfileClick={() => setCurrentView('profile')} onSettingsClick={() => setCurrentView('settings')} />;
 };
 export const AuthenticatedApp = () => {
-  return <AuthProvider data-magicpath-id="7" data-magicpath-path="AuthenticatedApp.tsx">
-      <AuthenticatedAppContent data-magicpath-id="8" data-magicpath-path="AuthenticatedApp.tsx" />
+  return <AuthProvider>
+      <AuthenticatedAppContent />
     </AuthProvider>;
 };
