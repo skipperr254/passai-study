@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Container, Theme } from './settings/types';
-import { AuthProvider } from './components/generated/AuthContext';
+import { AuthProvider } from './components/common/AuthContext';
 
 const theme: Theme = 'light';
 // only use 'centered' container for standalone components, never for full page apps or websites.

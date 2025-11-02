@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ForgotPasswordPage } from '../../components/generated/ForgotPasswordPage';
+import { ForgotPasswordPage } from '../../components/auth/ForgotPasswordPage';
 
 export function ForgotPasswordPageWrapper() {
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { SignInPage } from '../../components/generated/SignInPage';
-import { useAuth } from '../../components/generated/AuthContext';
+import { SignInPage } from '../../components/auth/SignInPage';
+import { useAuth } from '../../components/common/AuthContext';
 
 export function SignInPageWrapper() {
   const navigate = useNavigate();

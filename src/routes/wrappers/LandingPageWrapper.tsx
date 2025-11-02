@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { LandingPage } from '../../components/generated/LandingPage';
+import { LandingPage } from '../../components/auth/LandingPage';
 
 export function LandingPageWrapper() {
   const navigate = useNavigate();

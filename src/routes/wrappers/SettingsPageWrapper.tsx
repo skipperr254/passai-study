@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { SettingsPage } from '../../components/generated/SettingsPage';
-import { useAuth } from '../../components/generated/AuthContext';
+import { SettingsPage } from '../../components/common/SettingsPage';
+import { useAuth } from '../../components/common/AuthContext';
 
 export function SettingsPageWrapper() {
   const navigate = useNavigate();
@@ -11,10 +11,5 @@ export function SettingsPageWrapper() {
     navigate('/');
   };
 
-  return (
-    <SettingsPage
-      onLogout={handleLogout}
-      onBack={() => navigate(-1)}
-    />
-  );
+  return <SettingsPage onLogout={handleLogout} onBack={() => navigate(-1)} />;
 }

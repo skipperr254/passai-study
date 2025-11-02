@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { SignUpPage } from '../../components/generated/SignUpPage';
-import { useAuth } from '../../components/generated/AuthContext';
+import { SignUpPage } from '../../components/auth/SignUpPage';
+import { useAuth } from '../../components/common/AuthContext';
 
 export function SignUpPageWrapper() {
   const navigate = useNavigate();

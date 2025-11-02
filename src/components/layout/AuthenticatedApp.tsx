@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { AppShell } from './AppShell';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../common/AuthContext';
 
 export const AuthenticatedApp = () => {
   const { user, isAuthenticated } = useAuth();

@@ -4,12 +4,12 @@ import { LandingPageWrapper } from './wrappers/LandingPageWrapper';
 import { SignInPageWrapper } from './wrappers/SignInPageWrapper';
 import { SignUpPageWrapper } from './wrappers/SignUpPageWrapper';
 import { ForgotPasswordPageWrapper } from './wrappers/ForgotPasswordPageWrapper';
-import { AuthenticatedApp } from '../components/generated/AuthenticatedApp';
-import { DashboardPage } from '../components/generated/DashboardPage';
-import { SubjectsPage } from '../components/generated/SubjectsPage';
-import { QuizzesPage } from '../components/generated/QuizzesPage';
-import { MaterialsPage } from '../components/generated/MaterialsPage';
-import { StudyPlanPage } from '../components/generated/StudyPlanPage';
+import { AuthenticatedApp } from '../components/layout/AuthenticatedApp';
+import { DashboardPage } from '../components/dashboard/DashboardPage';
+import { SubjectsPage } from '../components/subject/SubjectsPage';
+import { QuizzesPage } from '../components/quiz/QuizzesPage';
+import { MaterialsPage } from '../components/material/MaterialsPage';
+import { StudyPlanPage } from '../components/common/StudyPlanPage';
 import { ProfilePageWrapper } from './wrappers/ProfilePageWrapper';
 import { SettingsPageWrapper } from './wrappers/SettingsPageWrapper';
 
