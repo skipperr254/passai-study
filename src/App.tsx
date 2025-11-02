@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
 import { Container, Theme } from './settings/types';
-import { AuthenticatedApp } from './components/generated/AuthenticatedApp';
+import { AuthProvider } from './components/generated/AuthContext';
 
-let theme: Theme = 'light';
+const theme: Theme = 'light';
 // only use 'centered' container for standalone components, never for full page apps or websites.
-let container: Container = 'none';
+const container: Container = 'none';
 
 function App() {
   function setTheme(theme: Theme) {
@@ -15,21 +16,24 @@ function App() {
     }
   }
 
-  setTheme(theme);
-
-  const generatedComponent = useMemo(() => {
-    // THIS IS WHERE THE TOP LEVEL GENRATED COMPONENT WILL BE RETURNED!
-    return <AuthenticatedApp />; // %EXPORT_STATEMENT%
+  useEffect(() => {
+    setTheme(theme);
   }, []);
 
   if (container === 'centered') {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center">
-        {generatedComponent}
-      </div>
+      <AuthProvider>
+        <div className="h-full w-full flex flex-col items-center justify-center">
+          <Outlet />
+        </div>
+      </AuthProvider>
     );
   } else {
-    return generatedComponent;
+    return (
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    );
   }
 }
 

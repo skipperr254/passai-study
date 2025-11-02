@@ -46,38 +46,37 @@
 ## PHASE 1: Foundation & Project Structure
 
 **Timeline**: Week 1 (5-7 days)  
-**Status**: ⬜ Not Started
+**Status**: 🟡 In Progress (1.1 ✅ Complete)
 
 ### 1.1 Add React Router for Navigation ⭐⭐⭐
 
 **Priority**: CRITICAL  
-**Estimated Time**: 4-6 hours
+**Estimated Time**: 4-6 hours  
+**Status**: ✅ COMPLETED
 
 #### Tasks
 
-- [ ] Install `react-router-dom`
-- [ ] Create route configuration file
-- [ ] Define all application routes:
-  - [ ] `/` - Landing page
-  - [ ] `/auth/signin` - Sign in
-  - [ ] `/auth/signup` - Sign up
-  - [ ] `/auth/forgot-password` - Password reset
-  - [ ] `/app/dashboard` - Main dashboard
-  - [ ] `/app/subjects` - Subjects list
-  - [ ] `/app/subjects/:id` - Subject detail
-  - [ ] `/app/quizzes` - Quizzes list
-  - [ ] `/app/quizzes/:id` - Quiz detail
-  - [ ] `/app/quiz/:id/session` - Take quiz
-  - [ ] `/app/quiz/:id/results` - Quiz results
-  - [ ] `/app/materials` - Materials upload
-  - [ ] `/app/study-plan` - Study plan
-  - [ ] `/app/profile` - User profile
-  - [ ] `/app/settings` - Settings
-- [ ] Create `ProtectedRoute` wrapper component
-- [ ] Update `App.tsx` with router
-- [ ] Replace manual view state in `AuthenticatedApp.tsx` with routing
-- [ ] Update `AppShell` navigation to use router links
-- [ ] Test all navigation flows
+- [x] Install `react-router-dom`
+- [x] Create route configuration file (`src/routes/index.tsx`)
+- [x] Define all application routes:
+  - [x] `/` - Landing page
+  - [x] `/auth/signin` - Sign in
+  - [x] `/auth/signup` - Sign up
+  - [x] `/auth/forgot-password` - Password reset
+  - [x] `/app/dashboard` - Main dashboard
+  - [x] `/app/subjects` - Subjects list
+  - [x] `/app/quizzes` - Quizzes list
+  - [x] `/app/materials` - Materials upload
+  - [x] `/app/study-plan` - Study plan
+  - [x] `/app/profile` - User profile
+  - [x] `/app/settings` - Settings
+- [x] Create `ProtectedRoute` wrapper component
+- [x] Update `App.tsx` with router (`<Outlet />`)
+- [x] Update `main.tsx` with `RouterProvider`
+- [x] Replace manual view state in `AuthenticatedApp.tsx` with routing
+- [x] Update `AppShell` navigation to use `NavLink` components
+- [x] Create wrapper components for auth pages with navigation
+- [x] Server running successfully on http://localhost:5174/
 
 #### Success Criteria
 
@@ -85,6 +84,13 @@
 - ✅ Browser back/forward buttons work correctly
 - ✅ Protected routes redirect to login when not authenticated
 - ✅ Navigation between pages is smooth
+
+#### Notes
+
+- Created wrapper components in `src/routes/wrappers/` to handle navigation callbacks
+- Used `NavLink` with `isActive` prop for active state styling
+- Auth flow integrated with routing (sign in/up navigates to dashboard)
+- Settings logout navigates back to landing page
 
 ---
 
