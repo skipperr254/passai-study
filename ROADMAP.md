@@ -10,6 +10,7 @@
 ## 📊 Project Overview
 
 ### Current State
+
 - ✅ Complete UI/UX design with Tailwind CSS
 - ✅ All features implemented with mock data
 - ✅ TypeScript + React + Vite setup
@@ -20,6 +21,7 @@
 - ❌ No data persistence beyond localStorage
 
 ### Target State
+
 - ✅ Production-ready web application
 - ✅ Supabase backend (database + auth + storage)
 - ✅ React Router for proper navigation
@@ -33,6 +35,7 @@
 ## 🗂️ Phase Tracking
 
 ### Legend
+
 - ⬜ Not Started
 - 🟡 In Progress
 - ✅ Completed
@@ -41,14 +44,17 @@
 ---
 
 ## PHASE 1: Foundation & Project Structure
+
 **Timeline**: Week 1 (5-7 days)  
 **Status**: ⬜ Not Started
 
 ### 1.1 Add React Router for Navigation ⭐⭐⭐
+
 **Priority**: CRITICAL  
 **Estimated Time**: 4-6 hours
 
 #### Tasks
+
 - [ ] Install `react-router-dom`
 - [ ] Create route configuration file
 - [ ] Define all application routes:
@@ -74,6 +80,7 @@
 - [ ] Test all navigation flows
 
 #### Success Criteria
+
 - ✅ All pages accessible via URL
 - ✅ Browser back/forward buttons work correctly
 - ✅ Protected routes redirect to login when not authenticated
@@ -82,10 +89,12 @@
 ---
 
 ### 1.2 Code Organization & Cleanup ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 6-8 hours
 
 #### Tasks
+
 - [ ] Create new folder structure:
   ```
   src/
@@ -122,6 +131,7 @@
 - [ ] Remove unused code
 
 #### Success Criteria
+
 - ✅ Clean, organized folder structure
 - ✅ All TypeScript types defined
 - ✅ No import errors
@@ -130,14 +140,17 @@
 ---
 
 ## PHASE 2: Supabase Setup & Database Design
+
 **Timeline**: Week 1-2 (3-5 days)  
 **Status**: ⬜ Not Started
 
 ### 2.1 Supabase Project Setup ⭐⭐⭐
+
 **Priority**: CRITICAL  
 **Estimated Time**: 1-2 hours
 
 #### Tasks
+
 - [ ] Create Supabase account/project
 - [ ] Note project URL and anon key
 - [ ] Install dependencies:
@@ -155,6 +168,7 @@
 - [ ] Test connection
 
 #### Success Criteria
+
 - ✅ Supabase project created
 - ✅ Environment variables configured
 - ✅ Client can connect to Supabase
@@ -162,10 +176,12 @@
 ---
 
 ### 2.2 Database Schema Design ⭐⭐⭐
+
 **Priority**: CRITICAL  
 **Estimated Time**: 4-6 hours
 
 #### Tasks
+
 - [ ] Create SQL migration file: `00001_initial_schema.sql`
 - [ ] Design and create tables:
   - [ ] `users` (extends auth.users)
@@ -189,6 +205,7 @@
 #### Database Schema Details
 
 **Table: users**
+
 ```sql
 CREATE TABLE users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -200,6 +217,7 @@ CREATE TABLE users (
 ```
 
 **Table: subjects**
+
 ```sql
 CREATE TABLE subjects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -215,6 +233,7 @@ CREATE TABLE subjects (
 ```
 
 **Table: materials**
+
 ```sql
 CREATE TABLE materials (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -234,6 +253,7 @@ CREATE TABLE materials (
 ```
 
 **Table: quizzes**
+
 ```sql
 CREATE TABLE quizzes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -251,6 +271,7 @@ CREATE TABLE quizzes (
 ```
 
 **Table: quiz_materials**
+
 ```sql
 CREATE TABLE quiz_materials (
   quiz_id UUID NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
@@ -260,6 +281,7 @@ CREATE TABLE quiz_materials (
 ```
 
 **Table: questions**
+
 ```sql
 CREATE TABLE questions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -280,6 +302,7 @@ CREATE TABLE questions (
 ```
 
 **Table: quiz_attempts**
+
 ```sql
 CREATE TABLE quiz_attempts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -294,6 +317,7 @@ CREATE TABLE quiz_attempts (
 ```
 
 **Table: question_responses**
+
 ```sql
 CREATE TABLE question_responses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -308,6 +332,7 @@ CREATE TABLE question_responses (
 ```
 
 **Table: study_sessions**
+
 ```sql
 CREATE TABLE study_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -322,6 +347,7 @@ CREATE TABLE study_sessions (
 ```
 
 **Table: subject_progress**
+
 ```sql
 CREATE TABLE subject_progress (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -339,6 +365,7 @@ CREATE TABLE subject_progress (
 ```
 
 #### Success Criteria
+
 - ✅ All tables created successfully
 - ✅ Foreign keys and constraints working
 - ✅ Can insert/query test data
@@ -347,10 +374,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 2.3 Supabase Storage Setup ⭐⭐⭐
+
 **Priority**: CRITICAL  
 **Estimated Time**: 1-2 hours
 
 #### Tasks
+
 - [ ] Create `materials` storage bucket
 - [ ] Configure bucket settings:
   - [ ] Max file size: 50MB
@@ -362,6 +391,7 @@ CREATE TABLE subject_progress (
 - [ ] Setup file deletion policies
 
 #### Success Criteria
+
 - ✅ Storage bucket created and configured
 - ✅ Can upload files successfully
 - ✅ Can retrieve files via URL
@@ -370,10 +400,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 2.4 Row Level Security (RLS) Policies ⭐⭐⭐
+
 **Priority**: CRITICAL (Security)  
 **Estimated Time**: 3-4 hours
 
 #### Tasks
+
 - [ ] Enable RLS on all tables
 - [ ] Create RLS policies for `users`:
   - [ ] Users can read their own profile
@@ -398,6 +430,7 @@ CREATE TABLE subject_progress (
 - [ ] Document all policies
 
 #### Success Criteria
+
 - ✅ All tables have RLS enabled
 - ✅ Users can only access their own data
 - ✅ No unauthorized data access possible
@@ -406,14 +439,17 @@ CREATE TABLE subject_progress (
 ---
 
 ## PHASE 3: Authentication Integration
+
 **Timeline**: Week 2 (3-4 days)  
 **Status**: ⬜ Not Started
 
 ### 3.1 Replace Mock Auth with Supabase Auth ⭐⭐⭐
+
 **Priority**: CRITICAL  
 **Estimated Time**: 6-8 hours
 
 #### Tasks
+
 - [ ] Create `src/services/auth.service.ts`
 - [ ] Implement authentication methods:
   - [ ] `signUp(name, email, password)` - Email/password signup
@@ -439,6 +475,7 @@ CREATE TABLE subject_progress (
 - [ ] Test all authentication flows
 
 #### Success Criteria
+
 - ✅ Users can sign up with email/password
 - ✅ Users can sign in with email/password
 - ✅ Users can sign out
@@ -450,10 +487,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 3.2 Protected Routes & Session Management ⭐⭐⭐
+
 **Priority**: CRITICAL  
 **Estimated Time**: 2-3 hours
 
 #### Tasks
+
 - [ ] Create `ProtectedRoute` component
 - [ ] Implement auth state checking
 - [ ] Handle redirects:
@@ -465,6 +504,7 @@ CREATE TABLE subject_progress (
 - [ ] Test edge cases (expired session, invalid token, etc.)
 
 #### Success Criteria
+
 - ✅ Protected routes only accessible when authenticated
 - ✅ Unauthenticated users redirected to login
 - ✅ Authenticated users can't access auth pages
@@ -474,14 +514,17 @@ CREATE TABLE subject_progress (
 ---
 
 ## PHASE 4: Core Features - Backend Integration
+
 **Timeline**: Week 2-4 (10-12 days)  
 **Status**: ⬜ Not Started
 
 ### 4.1 Subjects Management ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 6-8 hours
 
 #### Tasks
+
 - [ ] Create `src/services/subject.service.ts`
 - [ ] Implement CRUD operations:
   - [ ] `createSubject(data)` - Create new subject
@@ -506,6 +549,7 @@ CREATE TABLE subject_progress (
 - [ ] Test all subject operations
 
 #### Success Criteria
+
 - ✅ Can create subjects
 - ✅ Can view all subjects
 - ✅ Can update subjects
@@ -516,10 +560,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 4.2 Materials Upload & Processing ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 10-12 hours
 
 #### Tasks
+
 - [ ] Create `src/services/material.service.ts`
 - [ ] Implement file upload flow:
   - [ ] `uploadFile(file, subjectId)` - Upload to Supabase Storage
@@ -542,6 +588,7 @@ CREATE TABLE subject_progress (
 - [ ] Test with various file types and sizes
 
 #### Success Criteria
+
 - ✅ Files upload to Supabase Storage
 - ✅ Material records created in database
 - ✅ Text extracted from PDFs
@@ -553,10 +600,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 4.3 Quiz Creation Flow ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 8-10 hours
 
 #### Tasks
+
 - [ ] Create `src/services/quiz.service.ts`
 - [ ] Implement quiz operations:
   - [ ] `createQuiz(data)` - Create quiz
@@ -578,6 +627,7 @@ CREATE TABLE subject_progress (
 - [ ] Test entire quiz creation flow
 
 #### Success Criteria
+
 - ✅ Can create quizzes
 - ✅ Can select materials for quiz
 - ✅ Quiz settings saved correctly
@@ -588,10 +638,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 4.4 Quiz Taking & Results ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 10-12 hours
 
 #### Tasks
+
 - [ ] Create `src/services/quiz-attempt.service.ts`
 - [ ] Implement quiz session:
   - [ ] `startQuizAttempt(quizId)` - Create attempt record
@@ -617,6 +669,7 @@ CREATE TABLE subject_progress (
 - [ ] Test quiz session flow
 
 #### Success Criteria
+
 - ✅ Quiz attempts tracked in database
 - ✅ All responses saved immediately
 - ✅ Score calculated correctly
@@ -627,10 +680,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 4.5 Dashboard & Analytics ⭐⭐
+
 **Priority**: MEDIUM  
 **Estimated Time**: 6-8 hours
 
 #### Tasks
+
 - [ ] Create `src/services/analytics.service.ts`
 - [ ] Implement analytics queries:
   - [ ] `getSubjectProgress(subjectId)` - Get subject metrics
@@ -647,6 +702,7 @@ CREATE TABLE subject_progress (
 - [ ] Test with various data scenarios
 
 #### Success Criteria
+
 - ✅ Dashboard shows real user data
 - ✅ Performance charts accurate
 - ✅ Progress metrics calculated correctly
@@ -656,14 +712,17 @@ CREATE TABLE subject_progress (
 ---
 
 ## PHASE 5: State Management & Data Flow
+
 **Timeline**: Week 4 (3-4 days)  
 **Status**: ⬜ Not Started
 
 ### 5.1 Implement Zustand for Global State ⭐⭐
+
 **Priority**: MEDIUM  
 **Estimated Time**: 4-6 hours
 
 #### Tasks
+
 - [ ] Install Zustand: `npm install zustand`
 - [ ] Create stores:
   - [ ] `src/store/auth.store.ts` - Auth state
@@ -686,6 +745,7 @@ CREATE TABLE subject_progress (
 - [ ] Test state persistence
 
 #### Success Criteria
+
 - ✅ Global state accessible throughout app
 - ✅ State updates trigger re-renders
 - ✅ No prop drilling
@@ -694,10 +754,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 5.2 Implement React Query for Server State ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 6-8 hours
 
 #### Tasks
+
 - [ ] Install React Query: `npm install @tanstack/react-query`
 - [ ] Setup QueryClient and QueryClientProvider
 - [ ] Create custom hooks for all entities:
@@ -719,6 +781,7 @@ CREATE TABLE subject_progress (
 - [ ] Test caching behavior
 
 #### Success Criteria
+
 - ✅ All data fetching uses React Query
 - ✅ Caching works correctly
 - ✅ Automatic refetching on stale data
@@ -728,14 +791,17 @@ CREATE TABLE subject_progress (
 ---
 
 ## PHASE 6: AI Integration Planning
+
 **Timeline**: Week 5 (Future Enhancement)  
 **Status**: ⬜ Not Started
 
 ### 6.1 Quiz Generation AI (Future) ⭐
+
 **Priority**: LOW (Post-MVP)  
 **Estimated Time**: 16-20 hours
 
 #### Tasks (Planning Only for Now)
+
 - [ ] Research AI providers:
   - [ ] OpenAI GPT-4
   - [ ] Anthropic Claude
@@ -749,6 +815,7 @@ CREATE TABLE subject_progress (
 - [ ] Implement human review/editing
 
 #### Notes
+
 - Start with template-based generation for MVP
 - Plan AI integration for post-launch
 - Budget ~$50-100/month for AI API costs
@@ -757,10 +824,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 6.2 Passing Chance Calculation ⭐⭐
+
 **Priority**: MEDIUM  
 **Estimated Time**: 4-6 hours
 
 #### Tasks
+
 - [ ] Design passing chance algorithm:
   - [ ] Weight recent attempts more
   - [ ] Factor in difficulty levels
@@ -772,6 +841,7 @@ CREATE TABLE subject_progress (
 - [ ] Fine-tune weights
 
 #### Success Criteria
+
 - ✅ Passing chance updates after each quiz
 - ✅ Algorithm gives reasonable predictions
 - ✅ Takes into account recent performance
@@ -780,14 +850,17 @@ CREATE TABLE subject_progress (
 ---
 
 ## PHASE 7: Error Handling & Edge Cases
+
 **Timeline**: Week 5-6 (4-5 days)  
 **Status**: ⬜ Not Started
 
 ### 7.1 Comprehensive Error Handling ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 6-8 hours
 
 #### Tasks
+
 - [ ] Create error boundary components:
   - [ ] Global error boundary
   - [ ] Route-level error boundaries
@@ -812,6 +885,7 @@ CREATE TABLE subject_progress (
 - [ ] Test all error scenarios
 
 #### Success Criteria
+
 - ✅ App doesn't crash on errors
 - ✅ Users see helpful error messages
 - ✅ Failed requests retry automatically
@@ -821,10 +895,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 7.2 Loading & Skeleton States ⭐⭐
+
 **Priority**: MEDIUM  
 **Estimated Time**: 4-6 hours
 
 #### Tasks
+
 - [ ] Create skeleton components:
   - [ ] Subject card skeleton
   - [ ] Quiz card skeleton
@@ -846,6 +922,7 @@ CREATE TABLE subject_progress (
 - [ ] Test loading performance
 
 #### Success Criteria
+
 - ✅ No blank screens during loading
 - ✅ Skeleton states match final content
 - ✅ Progress indicators accurate
@@ -855,10 +932,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 7.3 Validation & Data Integrity ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 4-6 hours
 
 #### Tasks
+
 - [ ] Implement form validation:
   - [ ] Zod schemas for all forms
   - [ ] Real-time validation
@@ -881,6 +960,7 @@ CREATE TABLE subject_progress (
 - [ ] Test validation thoroughly
 
 #### Success Criteria
+
 - ✅ Invalid data rejected
 - ✅ Clear validation error messages
 - ✅ Can't upload dangerous files
@@ -890,14 +970,17 @@ CREATE TABLE subject_progress (
 ---
 
 ## PHASE 8: Production Readiness
+
 **Timeline**: Week 6-7 (5-7 days)  
 **Status**: ⬜ Not Started
 
 ### 8.1 Performance Optimization ⭐⭐
+
 **Priority**: MEDIUM  
 **Estimated Time**: 6-8 hours
 
 #### Tasks
+
 - [ ] Implement code splitting:
   - [ ] Use React.lazy for routes
   - [ ] Split large components
@@ -921,6 +1004,7 @@ CREATE TABLE subject_progress (
 - [ ] Fix performance issues
 
 #### Success Criteria
+
 - ✅ Lighthouse score > 90
 - ✅ First Contentful Paint < 1.5s
 - ✅ Time to Interactive < 3s
@@ -930,10 +1014,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 8.2 Testing ⭐⭐
+
 **Priority**: MEDIUM  
 **Estimated Time**: 8-10 hours
 
 #### Tasks
+
 - [ ] Setup testing infrastructure:
   - [ ] Install Vitest: `npm install -D vitest`
   - [ ] Install React Testing Library
@@ -957,6 +1043,7 @@ CREATE TABLE subject_progress (
 - [ ] Achieve >70% code coverage
 
 #### Success Criteria
+
 - ✅ Critical paths tested
 - ✅ Tests run in CI/CD
 - ✅ E2E tests pass
@@ -966,10 +1053,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 8.3 Security Hardening ⭐⭐⭐
+
 **Priority**: CRITICAL  
 **Estimated Time**: 4-6 hours
 
 #### Tasks
+
 - [ ] Review all RLS policies
 - [ ] Implement rate limiting:
   - [ ] Auth endpoints
@@ -988,6 +1077,7 @@ CREATE TABLE subject_progress (
 - [ ] Document security measures
 
 #### Success Criteria
+
 - ✅ No critical vulnerabilities
 - ✅ All data access controlled by RLS
 - ✅ Rate limiting prevents abuse
@@ -998,10 +1088,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 8.4 Monitoring & Analytics ⭐⭐
+
 **Priority**: MEDIUM  
 **Estimated Time**: 4-6 hours
 
 #### Tasks
+
 - [ ] Setup error tracking:
   - [ ] Configure Sentry
   - [ ] Add source maps
@@ -1024,6 +1116,7 @@ CREATE TABLE subject_progress (
   - [ ] Performance metrics
 
 #### Success Criteria
+
 - ✅ Errors tracked and alerted
 - ✅ Performance monitored
 - ✅ User analytics collected
@@ -1033,14 +1126,17 @@ CREATE TABLE subject_progress (
 ---
 
 ## PHASE 9: Deployment & DevOps
+
 **Timeline**: Week 7 (2-3 days)  
 **Status**: ⬜ Not Started
 
 ### 9.1 Environment Setup ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 2-3 hours
 
 #### Tasks
+
 - [ ] Setup environments:
   - [ ] **Development**: Local Supabase + Vite dev server
   - [ ] **Staging**: Supabase staging project + Vercel preview
@@ -1056,6 +1152,7 @@ CREATE TABLE subject_progress (
 - [ ] Test all environments
 
 #### Success Criteria
+
 - ✅ Three separate environments
 - ✅ Each environment isolated
 - ✅ Environment variables configured
@@ -1064,10 +1161,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 9.2 CI/CD Pipeline ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: 3-4 hours
 
 #### Tasks
+
 - [ ] Create GitHub Actions workflow:
   - [ ] `.github/workflows/ci.yml`
 - [ ] Configure CI pipeline:
@@ -1085,6 +1184,7 @@ CREATE TABLE subject_progress (
 - [ ] Test entire pipeline
 
 #### Success Criteria
+
 - ✅ Tests run on every PR
 - ✅ Staging deploys on PR
 - ✅ Production deploys on merge
@@ -1094,10 +1194,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 9.3 Production Deployment ⭐⭐⭐
+
 **Priority**: CRITICAL  
 **Estimated Time**: 2-4 hours
 
 #### Tasks
+
 - [ ] Pre-deployment checklist:
   - [ ] All tests passing
   - [ ] Performance optimized
@@ -1120,6 +1222,7 @@ CREATE TABLE subject_progress (
   - [ ] Verify analytics
 
 #### Success Criteria
+
 - ✅ App deployed to production
 - ✅ Custom domain working
 - ✅ SSL certificate active
@@ -1129,14 +1232,17 @@ CREATE TABLE subject_progress (
 ---
 
 ## PHASE 10: Post-Launch Features
+
 **Timeline**: Week 8+ (Ongoing)  
 **Status**: ⬜ Not Started
 
 ### 10.1 User Feedback & Iteration ⭐⭐⭐
+
 **Priority**: HIGH  
 **Estimated Time**: Ongoing
 
 #### Tasks
+
 - [ ] Add feedback mechanism:
   - [ ] Feedback form
   - [ ] Bug reporting
@@ -1154,10 +1260,12 @@ CREATE TABLE subject_progress (
 ---
 
 ### 10.2 Advanced Features (Future) ⭐
+
 **Priority**: LOW  
 **Estimated Time**: TBD
 
 #### Potential Features
+
 - [ ] Collaborative features:
   - [ ] Share quizzes with friends
   - [ ] Study groups
@@ -1193,18 +1301,18 @@ CREATE TABLE subject_progress (
 
 ### Overall Progress: 0%
 
-| Phase | Status | Progress | ETA |
-|-------|--------|----------|-----|
-| Phase 1: Foundation | ⬜ Not Started | 0% | Week 1 |
-| Phase 2: Supabase Setup | ⬜ Not Started | 0% | Week 1-2 |
-| Phase 3: Authentication | ⬜ Not Started | 0% | Week 2 |
-| Phase 4: Core Features | ⬜ Not Started | 0% | Week 2-4 |
-| Phase 5: State Management | ⬜ Not Started | 0% | Week 4 |
-| Phase 6: AI Planning | ⬜ Not Started | 0% | Week 5 |
-| Phase 7: Error Handling | ⬜ Not Started | 0% | Week 5-6 |
-| Phase 8: Production Ready | ⬜ Not Started | 0% | Week 6-7 |
-| Phase 9: Deployment | ⬜ Not Started | 0% | Week 7 |
-| Phase 10: Post-Launch | ⬜ Not Started | 0% | Week 8+ |
+| Phase                     | Status         | Progress | ETA      |
+| ------------------------- | -------------- | -------- | -------- |
+| Phase 1: Foundation       | ⬜ Not Started | 0%       | Week 1   |
+| Phase 2: Supabase Setup   | ⬜ Not Started | 0%       | Week 1-2 |
+| Phase 3: Authentication   | ⬜ Not Started | 0%       | Week 2   |
+| Phase 4: Core Features    | ⬜ Not Started | 0%       | Week 2-4 |
+| Phase 5: State Management | ⬜ Not Started | 0%       | Week 4   |
+| Phase 6: AI Planning      | ⬜ Not Started | 0%       | Week 5   |
+| Phase 7: Error Handling   | ⬜ Not Started | 0%       | Week 5-6 |
+| Phase 8: Production Ready | ⬜ Not Started | 0%       | Week 6-7 |
+| Phase 9: Deployment       | ⬜ Not Started | 0%       | Week 7   |
+| Phase 10: Post-Launch     | ⬜ Not Started | 0%       | Week 8+  |
 
 ---
 
@@ -1223,6 +1331,7 @@ CREATE TABLE subject_progress (
 ## 📝 Notes & Decisions
 
 ### Technology Stack
+
 - **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS
 - **Backend**: Supabase (PostgreSQL + Auth + Storage)
 - **State Management**: Zustand + React Query
@@ -1233,6 +1342,7 @@ CREATE TABLE subject_progress (
 - **Future AI**: OpenAI GPT-4 or Anthropic Claude
 
 ### Architecture Decisions
+
 1. **Why Supabase?**: All-in-one backend (auth, database, storage, real-time)
 2. **Why Zustand?**: Lightweight, easy to use, no boilerplate
 3. **Why React Query?**: Best-in-class server state management
@@ -1240,6 +1350,7 @@ CREATE TABLE subject_progress (
 5. **Why Mock AI Initially?**: Focus on core features first, add AI later
 
 ### Risk Management
+
 - **Risk**: AI costs too high → **Mitigation**: Start with templates, add AI later
 - **Risk**: Performance issues with large files → **Mitigation**: Implement streaming, chunking
 - **Risk**: Database costs → **Mitigation**: Start with free tier, optimize queries
@@ -1250,6 +1361,7 @@ CREATE TABLE subject_progress (
 ## 🔗 Resources
 
 ### Documentation
+
 - [React Router Docs](https://reactrouter.com/)
 - [Supabase Docs](https://supabase.com/docs)
 - [Zustand Docs](https://docs.pmnd.rs/zustand/)
@@ -1257,11 +1369,13 @@ CREATE TABLE subject_progress (
 - [Vercel Docs](https://vercel.com/docs)
 
 ### Tutorials
+
 - [Supabase Auth with React](https://supabase.com/docs/guides/auth/auth-helpers/react)
 - [React Query Best Practices](https://tkdodo.eu/blog/practical-react-query)
 - [Vercel Deployment Guide](https://vercel.com/docs/deployments/overview)
 
 ### Tools
+
 - [Supabase Studio](https://supabase.com/docs/guides/platform/studio)
 - [Lighthouse](https://developers.google.com/web/tools/lighthouse)
 - [Sentry](https://sentry.io/)
