@@ -1,17 +1,18 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import App from '../App';
-import { LandingPageWrapper } from './wrappers/LandingPageWrapper';
-import { SignInPageWrapper } from './wrappers/SignInPageWrapper';
-import { SignUpPageWrapper } from './wrappers/SignUpPageWrapper';
-import { ForgotPasswordPageWrapper } from './wrappers/ForgotPasswordPageWrapper';
-import { AuthenticatedApp } from '../components/layout/AuthenticatedApp';
-import { DashboardPage } from '../components/dashboard/DashboardPage';
-import { SubjectsPage } from '../components/subject/SubjectsPage';
-import { QuizzesPage } from '../components/quiz/QuizzesPage';
-import { MaterialsPage } from '../components/material/MaterialsPage';
-import { StudyPlanPage } from '../components/common/StudyPlanPage';
-import { ProfilePageWrapper } from './wrappers/ProfilePageWrapper';
-import { SettingsPageWrapper } from './wrappers/SettingsPageWrapper';
+import { LandingPageWrapper } from '@/routes/wrappers/LandingPageWrapper';
+import { SignInPageWrapper } from '@/routes/wrappers/SignInPageWrapper';
+import { SignUpPageWrapper } from '@/routes/wrappers/SignUpPageWrapper';
+import { ForgotPasswordPageWrapper } from '@/routes/wrappers/ForgotPasswordPageWrapper';
+import { AuthenticatedApp } from '@/components/layout/AuthenticatedApp';
+import { DashboardPage } from '@/components/dashboard/DashboardPage';
+import { SubjectsPage } from '@/components/subject/SubjectsPage';
+import { QuizzesPage } from '@/components/quiz/QuizzesPage';
+import { QuizDetailPageWrapper } from '@/routes/wrappers/QuizDetailPageWrapper';
+import { MaterialsPage } from '@/components/generated/MaterialsPage';
+import { StudyPlanPage } from '@/components/common/StudyPlanPage';
+import { ProfilePageWrapper } from '@/routes/wrappers/ProfilePageWrapper';
+import { SettingsPageWrapper } from '@/routes/wrappers/SettingsPageWrapper';
 
 export const router = createBrowserRouter([
   {
@@ -58,6 +59,10 @@ export const router = createBrowserRouter([
           {
             path: 'quizzes',
             element: <QuizzesPage />,
+          },
+          {
+            path: 'quizzes/:quizId',
+            element: <QuizDetailPageWrapper />,
           },
           {
             path: 'materials',

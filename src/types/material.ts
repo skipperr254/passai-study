@@ -1,18 +1,31 @@
-export type MaterialType = 'pdf' | 'video' | 'image' | 'document' | 'notes';
+export type MaterialType =
+  | 'pdf'
+  | 'video'
+  | 'image'
+  | 'document'
+  | 'presentation'
+  | 'text'
+  | 'audio'
+  | 'other';
 
 export interface Material {
   id: string;
   userId: string;
   subjectId: string;
   name: string;
-  type: MaterialType;
+  fileType: MaterialType;
   filePath: string;
   fileSize: number;
-  uploadedAt: string;
-  processedAt?: string;
+  mimeType: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  thumbnail?: string;
-  metadata?: MaterialMetadata;
+  thumbnailUrl: string | null;
+  pageCount: number | null;
+  durationSeconds: number | null;
+  extractedText: string | null;
+  uploadedAt: string;
+  processedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface MaterialMetadata {
