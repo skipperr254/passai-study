@@ -34,6 +34,7 @@ import {
   Lightbulb,
   Flag,
   Plus,
+  Loader2,
 } from 'lucide-react';
 import { VerificationQuiz } from '@/components/quiz';
 import { useAuth } from '@/components/common/AuthContext';
@@ -55,10 +56,17 @@ import {
   regenerateStudyPlan,
   getStudyRecommendations,
 } from '../../services/task-generator.service';
+import {
+  createPersonalizedStudyPlan,
+  analyzeStudyPerformance,
+  type AIStudyPlan,
+  type StudyPlanAnalysis,
+} from '../../services/study-plan.service';
 import type {
   StudyTask as RealStudyTask,
   TopicMastery as RealTopicMastery,
 } from '../../types/learning';
+import toast from 'react-hot-toast';
 type Subject = {
   id: string;
   name: string;
@@ -318,6 +326,11 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
     estimatedTime: number;
   } | null>(null);
 
+  // AI Study Plan states
+  const [aiStudyPlan, setAiStudyPlan] = useState<AIStudyPlan | null>(null);
+  const [studyPlanAnalysis, setStudyPlanAnalysis] = useState<StudyPlanAnalysis | null>(null);
+  const [generatingPlan, setGeneratingPlan] = useState(false);
+
   // Timer state - each task has its own timer
   const [taskTimers, setTaskTimers] = useState<Record<string, number>>({});
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -404,7 +417,7 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
       try {
         setLoadingData(true);
 
-        // Fetch tasks for selected subject
+        // Fetch existing tasks for selected subject
         const tasksData = await getTodaysTasks(user.id, selectedSubject.id);
         setRealTasks(tasksData);
 
@@ -428,6 +441,34 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
 
     fetchStudyData();
   }, [user, selectedSubject.id, hasQuizAttempts]);
+
+  // Function to generate AI-powered study plan
+  const handleGenerateStudyPlan = async () => {
+    if (!user || !selectedSubject.id) return;
+
+    try {
+      setGeneratingPlan(true);
+      toast.loading('Analyzing your performance...', { id: 'study-plan' });
+
+      // Create personalized study plan
+      const result = await createPersonalizedStudyPlan(user.id, selectedSubject.id, {
+        focusArea: 'weakTopics',
+        availableHoursPerWeek: 10,
+      });
+
+      setStudyPlanAnalysis(result.analysis);
+      setAiStudyPlan(result.plan);
+      setRealTasks(result.tasks);
+
+      toast.success('Study plan generated successfully!', { id: 'study-plan', duration: 4000 });
+    } catch (error) {
+      console.error('Error generating study plan:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate study plan';
+      toast.error(errorMessage, { id: 'study-plan', duration: 5000 });
+    } finally {
+      setGeneratingPlan(false);
+    }
+  };
 
   // Display mastery: use real data if available, fallback to mock
   const displayMastery = realTasks.length > 0 ? subjectMastery : selectedSubject.mastery;
@@ -951,26 +992,170 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
             </div>
           </section>
 
+          {/* AI Study Plan Insights */}
+          {aiStudyPlan && (
+            <section className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-5 lg:p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-slate-900 mb-1">AI-Generated Study Plan</h3>
+                  <p className="text-sm text-slate-600">
+                    Personalized recommendations based on your quiz performance
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-indigo-300">
+                  <Brain className="w-4 h-4 text-indigo-600" />
+                  <span className="text-sm font-bold text-indigo-600">
+                    {aiStudyPlan.overview.confidenceLevel}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Overview Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+                {/* Strengths */}
+                <div className="bg-white rounded-xl p-4 border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    <span className="text-xs font-bold text-green-600 uppercase">Strengths</span>
+                  </div>
+                  <ul className="space-y-1">
+                    {aiStudyPlan.overview.strengths.slice(0, 3).map((strength, idx) => (
+                      <li key={idx} className="text-sm text-slate-700 flex items-start gap-2">
+                        <CheckCircle2 className="w-3 h-3 text-green-600 mt-1 flex-shrink-0" />
+                        <span>{strength}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Weaknesses */}
+                <div className="bg-white rounded-xl p-4 border border-amber-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600" />
+                    <span className="text-xs font-bold text-amber-600 uppercase">
+                      Areas to Improve
+                    </span>
+                  </div>
+                  <ul className="space-y-1">
+                    {aiStudyPlan.overview.weaknesses.slice(0, 3).map((weakness, idx) => (
+                      <li key={idx} className="text-sm text-slate-700 flex items-start gap-2">
+                        <Target className="w-3 h-3 text-amber-600 mt-1 flex-shrink-0" />
+                        <span>{weakness}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Focus Areas */}
+                <div className="bg-white rounded-xl p-4 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Flag className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-bold text-blue-600 uppercase">
+                      Priority Focus
+                    </span>
+                  </div>
+                  <ul className="space-y-1">
+                    {aiStudyPlan.overview.focusAreas.slice(0, 3).map((area, idx) => (
+                      <li key={idx} className="text-sm text-slate-700 flex items-start gap-2">
+                        <ChevronRight className="w-3 h-3 text-blue-600 mt-1 flex-shrink-0" />
+                        <span>{area}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Recommendations */}
+              <div className="bg-white rounded-xl p-4 border border-indigo-200">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Zap className="w-4 h-4 text-orange-500" />
+                      <span className="text-xs font-bold text-slate-600 uppercase">
+                        Immediate (Now)
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-700">
+                      {aiStudyPlan.recommendations.immediate}
+                    </p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="w-4 h-4 text-blue-500" />
+                      <span className="text-xs font-bold text-slate-600 uppercase">
+                        Short-term (1-2 weeks)
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-700">
+                      {aiStudyPlan.recommendations.shortTerm}
+                    </p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Trophy className="w-4 h-4 text-purple-500" />
+                      <span className="text-xs font-bold text-slate-600 uppercase">
+                        Long-term (Overall)
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-700">{aiStudyPlan.recommendations.longTerm}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Study Schedule */}
+              {aiStudyPlan.studySchedule && (
+                <div className="mt-3 p-4 bg-white rounded-xl border border-indigo-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-slate-900">Recommended Schedule</span>
+                    <div className="flex items-center gap-4">
+                      <div className="text-center">
+                        <p className="text-xs text-slate-600">Daily</p>
+                        <p className="text-sm font-bold text-indigo-600">
+                          {aiStudyPlan.studySchedule.daily}m
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-slate-600">Weekly</p>
+                        <p className="text-sm font-bold text-indigo-600">
+                          {Math.round(aiStudyPlan.studySchedule.weekly / 60)}h
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600">{aiStudyPlan.studySchedule.breakdown}</p>
+                </div>
+              )}
+            </section>
+          )}
+
           {/* Study Tasks */}
           <section>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                <h2 className="text-lg lg:text-xl font-bold text-slate-900">Study Tasks</h2>
+                <h2 className="text-lg lg:text-xl font-bold text-slate-900">
+                  {aiStudyPlan ? 'Your Personalized Tasks' : 'Study Tasks'}
+                </h2>
               </div>
               <button
-                onClick={async () => {
-                  if (!user) return;
-                  setLoadingData(true);
-                  const newTasks = await regenerateStudyPlan(user.id, selectedSubject.id);
-                  setRealTasks(newTasks);
-                  setLoadingData(false);
-                }}
-                className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 disabled:opacity-50"
-                disabled={loadingData}
+                onClick={handleGenerateStudyPlan}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={generatingPlan || loadingData}
               >
-                Regenerate
-                <RotateCcw className="w-4 h-4" />
+                {generatingPlan ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>{aiStudyPlan ? 'Regenerate' : 'Generate AI Plan'}</span>
+                  </>
+                )}
               </button>
             </div>
 
