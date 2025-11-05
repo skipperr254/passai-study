@@ -19,9 +19,46 @@ export interface AIQuestionSchema {
 }
 
 /**
- * Generate quiz questions using OpenAI based on material content
+ * Generate quiz questions using OpenAI based on material content with retry logic
  */
 export async function generateQuizQuestions(
+  materialContent: string,
+  settings: QuizSettings,
+  subjectName?: string
+): Promise<AIQuestionSchema[]> {
+  const maxRetries = 2;
+  let lastError: Error | null = null;
+
+  // Try up to maxRetries times
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt}/${maxRetries} to generate quiz questions`);
+      const result = await generateQuizQuestionsAttempt(materialContent, settings, subjectName);
+      console.log(`Successfully generated ${result.length} questions on attempt ${attempt}`);
+      return result;
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`Attempt ${attempt}/${maxRetries} failed:`, lastError.message);
+
+      if (attempt < maxRetries) {
+        // Wait a bit before retrying (exponential backoff)
+        const waitTime = attempt * 1000; // 1s, 2s
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+
+  // All retries failed
+  throw new Error(
+    `Failed to communicate with AI after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`
+  );
+}
+
+/**
+ * Internal function to attempt question generation once
+ */
+async function generateQuizQuestionsAttempt(
   materialContent: string,
   settings: QuizSettings,
   subjectName?: string
@@ -48,7 +85,11 @@ export async function generateQuizQuestions(
   // Build system prompt
   const systemPrompt = `You are an expert educational quiz generator. Your task is to create high-quality, engaging quiz questions based on study materials.
 
-IMPORTANT: You MUST respond with ONLY a valid JSON array. No additional text, explanations, or markdown formatting.
+CRITICAL REQUIREMENTS:
+1. You MUST respond with a valid JSON object containing a "questions" array
+2. The response format MUST be: {"questions": [... array of question objects ...]}
+3. NEVER return a single question object - ALWAYS return an array even if generating just one question
+4. No additional text, explanations, or markdown formatting outside the JSON
 
 Generate questions that:
 1. Test understanding, not just memorization
@@ -77,16 +118,21 @@ Mode: ${mode}
 Study Material:
 ${truncatedContent}
 
-Respond with a JSON array of ${questionCount} questions. Each question must follow this EXACT structure:
+Response format - you MUST use this EXACT structure:
 {
-  "question": "The question text",
-  "type": "multiple-choice" | "true-false" | "short-answer" | "essay",
-  "options": ["Option A", "Option B", "Option C", "Option D"], // Only for multiple-choice
-  "correctAnswer": "The correct answer(s)", // String for most types, array for multiple correct answers
-  "explanation": "Why this answer is correct and what concept it tests",
-  "difficulty": "easy" | "medium" | "hard",
-  "tags": ["concept1", "concept2"], // Key topics/concepts covered
-  "points": 1-5 // Points based on difficulty: easy=1, medium=2-3, hard=4-5
+  "questions": [
+    {
+      "question": "The question text",
+      "type": "multiple-choice" | "true-false" | "short-answer" | "essay",
+      "options": ["Option A", "Option B", "Option C", "Option D"], // Only for multiple-choice
+      "correctAnswer": "The correct answer(s)", // String for most types, array for multiple correct answers
+      "explanation": "Why this answer is correct and what concept it tests",
+      "difficulty": "easy" | "medium" | "hard",
+      "tags": ["concept1", "concept2"], // Key topics/concepts covered
+      "points": 1-5 // Points based on difficulty: easy=1, medium=2-3, hard=4-5
+    }
+    // ... ${questionCount} total questions
+  ]
 }
 
 Question type distribution (aim for variety):
@@ -95,7 +141,7 @@ Question type distribution (aim for variety):
 - 15% short-answer
 - 5% essay (only for exam mode)
 
-RESPOND WITH ONLY THE JSON ARRAY. NO OTHER TEXT.`;
+CRITICAL: Your response MUST be a JSON object with a "questions" array containing ${questionCount} question objects. DO NOT return anything else.`;
 
   try {
     // Call OpenAI API with JSON mode for reliable structured output
@@ -128,18 +174,49 @@ RESPOND WITH ONLY THE JSON ARRAY. NO OTHER TEXT.`;
       throw new Error('Invalid JSON response from OpenAI');
     }
 
-    // Handle both direct array and wrapped object formats
-    const parsedObj = parsed as { questions?: unknown[]; data?: unknown[] };
-    const questions: AIQuestionSchema[] = Array.isArray(parsed)
-      ? parsed
-      : parsedObj.questions || parsedObj.data || [];
+    // Handle various response formats and ensure we get an array
+    let questions: unknown[] = [];
+
+    if (Array.isArray(parsed)) {
+      // Direct array response
+      questions = parsed;
+    } else if (parsed && typeof parsed === 'object') {
+      // Object wrapper - try common property names
+      const parsedObj = parsed as Record<string, unknown>;
+
+      if (Array.isArray(parsedObj.questions)) {
+        questions = parsedObj.questions;
+      } else if (Array.isArray(parsedObj.data)) {
+        questions = parsedObj.data;
+      } else if (Array.isArray(parsedObj.items)) {
+        questions = parsedObj.items;
+      } else if (Array.isArray(parsedObj.quiz)) {
+        questions = parsedObj.quiz;
+      } else {
+        // If the object itself looks like a question (has 'question' property), wrap it in an array
+        if (parsedObj.question && typeof parsedObj.question === 'string') {
+          console.warn('AI returned a single question object instead of an array, wrapping it');
+          questions = [parsedObj];
+        } else {
+          // Try to extract any array property
+          const arrayValues = Object.values(parsedObj).filter(Array.isArray);
+          if (arrayValues.length > 0) {
+            questions = arrayValues[0] as unknown[];
+          }
+        }
+      }
+    }
 
     if (!Array.isArray(questions) || questions.length === 0) {
-      throw new Error('No questions generated by OpenAI');
+      throw new Error('No questions array found in AI response');
     }
 
     // Validate and clean questions
     const validatedQuestions = questions.map((q, index) => validateQuestion(q, index));
+
+    if (validatedQuestions.length === 0) {
+      throw new Error('No valid questions after validation');
+    }
 
     return validatedQuestions.slice(0, questionCount); // Ensure we return exactly questionCount
   } catch (error) {

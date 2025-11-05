@@ -400,9 +400,27 @@ export async function generateQuestions(
         throw new Error('No content available from materials for question generation');
       }
 
-      // Generate questions using AI
+      // Generate questions using AI with retry logic
       console.log('Generating questions with AI for quiz:', quizId);
-      const aiQuestions = await generateQuizQuestions(combinedContent, settings, subjectName);
+
+      let aiQuestions;
+      try {
+        aiQuestions = await generateQuizQuestions(combinedContent, settings, subjectName);
+      } catch (aiError) {
+        const errorMessage = aiError instanceof Error ? aiError.message : 'Unknown error';
+
+        // Check if it's a communication error (all retries failed)
+        if (errorMessage.includes('Failed to communicate with AI')) {
+          console.error('AI communication failed after retries:', errorMessage);
+          throw new Error(
+            'Unable to connect to AI service after multiple attempts. Using fallback question generation instead.'
+          );
+        }
+
+        // Other AI errors
+        console.error('AI generation error:', errorMessage);
+        throw new Error(`AI generation failed: ${errorMessage}`);
+      }
 
       // Map AI questions to database format and insert
       const questionsToInsert = aiQuestions.map((q, index) => ({
@@ -491,20 +509,20 @@ async function generateTemplateQuestions(
 
     questionsToInsert.push({
       quiz_id: quizId,
-      question: `Question ${i + 1}: This is a ${difficulty} question about ${topic}. (Template question - add materials and enable AI for better questions)`,
+      question: `Question ${i + 1}: [Template] ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} question about ${topic}. Please edit this question with your own content.`,
       type: 'multiple-choice',
       options: [
-        'This is a placeholder option A',
-        'This is a placeholder option B',
-        'This is a placeholder option C',
-        'This is a placeholder option D',
+        'Option A - Please edit',
+        'Option B - Please edit',
+        'Option C - Please edit',
+        'Option D - Please edit',
       ],
-      correct_answer: 'This is a placeholder option A',
-      explanation: `This is a template question. Enable AI generation (VITE_ENABLE_AI_GENERATION=true) and add study materials to generate real questions.`,
+      correct_answer: 'Option A - Please edit',
+      explanation: `This is a placeholder question. Edit it to match your study material. AI generation was unavailable, so template questions were created instead.`,
       topic: topic,
       difficulty: difficulty,
       points: difficulty === 'easy' ? 1 : difficulty === 'hard' ? 3 : 2,
-      tags: [topic],
+      tags: [topic, 'template'],
       source_material_id: materialIds[i % materialIds.length] || null,
       source_page: null,
       source_excerpt: null,
