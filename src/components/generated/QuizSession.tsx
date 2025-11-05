@@ -18,7 +18,7 @@ import {
   Flag,
   Lightbulb,
 } from 'lucide-react';
-import { MoodCheckModal } from './MoodCheckModal';
+import { MoodCheckModal } from '../common/MoodCheckModal';
 import { QuizResultsPage } from './QuizResultsPage';
 type QuestionType = 'multiple-choice' | 'true-false' | 'short-answer' | 'matching';
 type Question = {
@@ -164,6 +164,20 @@ export const QuizSession = (props: QuizSessionProps) => {
   const midpointIndex = Math.floor(questions.length / 2);
   const shouldShowMoodCheck = hasSubmitted && currentQuestionIndex === midpointIndex && !moodData;
 
+  const handleTimeUp = React.useCallback(() => {
+    const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
+    const result: QuestionResult = {
+      questionId: currentQuestion.id,
+      userAnswer: '',
+      correctAnswer: currentQuestion.correctAnswer,
+      isCorrect: false,
+      timeSpent,
+      wasAnswered: false,
+    };
+    setResults(prev => [...prev, result]);
+    setHasSubmitted(true);
+  }, [questionStartTime, currentQuestion.id, currentQuestion.correctAnswer]);
+
   // Timer effect
   useEffect(() => {
     if (hasSubmitted || isQuizComplete) return;
@@ -178,7 +192,7 @@ export const QuizSession = (props: QuizSessionProps) => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [hasSubmitted, currentQuestionIndex, isQuizComplete]);
+  }, [hasSubmitted, currentQuestionIndex, isQuizComplete, handleTimeUp]);
 
   // Check for midpoint - show mood check after answering the midpoint question
   useEffect(() => {
@@ -186,19 +200,6 @@ export const QuizSession = (props: QuizSessionProps) => {
       setShowMoodCheck(true);
     }
   }, [shouldShowMoodCheck]);
-  const handleTimeUp = () => {
-    const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
-    const result: QuestionResult = {
-      questionId: currentQuestion.id,
-      userAnswer: '',
-      correctAnswer: currentQuestion.correctAnswer,
-      isCorrect: false,
-      timeSpent,
-      wasAnswered: false,
-    };
-    setResults(prev => [...prev, result]);
-    setHasSubmitted(true);
-  };
   const handleSubmitAnswer = () => {
     const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
     const isCorrect =
@@ -378,30 +379,19 @@ export const QuizSession = (props: QuizSessionProps) => {
                 );
               })
             ) : (
-              /* Short Answer / Essay Questions */
+              /* Short Answer Questions */
               <div className="space-y-3">
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  {currentQuestion.type === 'essay' ? 'Your Answer (Essay):' : 'Your Answer:'}
+                  Your Answer:
                 </label>
-                {currentQuestion.type === 'essay' ? (
-                  <textarea
-                    value={selectedAnswer}
-                    onChange={e => !hasSubmitted && setSelectedAnswer(e.target.value)}
-                    disabled={hasSubmitted}
-                    rows={8}
-                    placeholder="Type your answer here..."
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-600 resize-none"
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    value={selectedAnswer}
-                    onChange={e => !hasSubmitted && setSelectedAnswer(e.target.value)}
-                    disabled={hasSubmitted}
-                    placeholder="Type your answer here..."
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-600"
-                  />
-                )}
+                <input
+                  type="text"
+                  value={selectedAnswer}
+                  onChange={e => !hasSubmitted && setSelectedAnswer(e.target.value)}
+                  disabled={hasSubmitted}
+                  placeholder="Type your answer here..."
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-600"
+                />
                 {hasSubmitted && (
                   <p className="text-xs text-slate-600 mt-2">
                     <span className="font-semibold">Note:</span> Your answer has been recorded.
