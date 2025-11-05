@@ -39,6 +39,7 @@ import { VerificationQuiz } from '@/components/quiz';
 import { useAuth } from '@/components/common/AuthContext';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 import {
   getTodaysTasks,
   startTask,
@@ -290,6 +291,8 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { subjects: dbSubjects, loading: subjectsLoading } = useSubjects();
+  const [hasQuizAttempts, setHasQuizAttempts] = useState(false);
+  const [checkingQuizAttempts, setCheckingQuizAttempts] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState<Subject>(
     preSelectedSubjectId
       ? mockSubjects.find(s => s.id === preSelectedSubjectId) || mockSubjects[0]
@@ -344,10 +347,59 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
     .filter(t => !t.completed)
     .reduce((acc, t) => acc + t.estimatedTime, 0);
 
+  // Check if user has any quiz attempts for the selected subject
+  useEffect(() => {
+    const checkQuizAttempts = async () => {
+      if (!user || !selectedSubject.id) {
+        setCheckingQuizAttempts(false);
+        return;
+      }
+
+      try {
+        setCheckingQuizAttempts(true);
+
+        // First get all quizzes for this subject
+        const { data: quizzes, error: quizzesError } = await supabase
+          .from('quizzes')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('subject_id', selectedSubject.id);
+
+        if (quizzesError) throw quizzesError;
+
+        if (!quizzes || quizzes.length === 0) {
+          setHasQuizAttempts(false);
+          setCheckingQuizAttempts(false);
+          return;
+        }
+
+        const quizIds = quizzes.map(q => q.id);
+
+        // Check if there are any attempts for these quizzes
+        const { data: attempts, error: attemptsError } = await supabase
+          .from('quiz_attempts')
+          .select('id')
+          .in('quiz_id', quizIds)
+          .limit(1);
+
+        if (attemptsError) throw attemptsError;
+
+        setHasQuizAttempts(attempts && attempts.length > 0);
+      } catch (error) {
+        console.error('Error checking quiz attempts:', error);
+        setHasQuizAttempts(false);
+      } finally {
+        setCheckingQuizAttempts(false);
+      }
+    };
+
+    checkQuizAttempts();
+  }, [user, selectedSubject.id]);
+
   // Fetch real data
   useEffect(() => {
     const fetchStudyData = async () => {
-      if (!user || !selectedSubject.id) return;
+      if (!user || !selectedSubject.id || !hasQuizAttempts) return;
 
       try {
         setLoadingData(true);
@@ -375,7 +427,7 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
     };
 
     fetchStudyData();
-  }, [user, selectedSubject.id]);
+  }, [user, selectedSubject.id, hasQuizAttempts]);
 
   // Display mastery: use real data if available, fallback to mock
   const displayMastery = realTasks.length > 0 ? subjectMastery : selectedSubject.mastery;
@@ -585,7 +637,7 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
   };
 
   // Show loading state
-  if (subjectsLoading) {
+  if (subjectsLoading || checkingQuizAttempts) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
@@ -615,6 +667,31 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
           >
             <Book className="w-5 h-5" />
             <span>Create Your First Subject</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if user hasn't taken any quizzes yet
+  if (!hasQuizAttempts) {
+    return (
+      <div className="h-full flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <FlaskConical className="w-10 h-10 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold text-slate-900 mb-3">Take Your First Quiz</h3>
+          <p className="text-slate-600 mb-6">
+            Your personalized study plan will be generated after you complete your first quiz. This
+            helps us understand your strengths and weaknesses to create a custom learning path.
+          </p>
+          <button
+            onClick={() => navigate('/app/quizzes')}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all inline-flex items-center gap-2"
+          >
+            <Play className="w-5 h-5" />
+            <span>Go to Quizzes</span>
           </button>
         </div>
       </div>

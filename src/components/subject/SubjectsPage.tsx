@@ -20,6 +20,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useSubjects } from '@/hooks/useSubjects';
+import { getSubjectStats } from '@/services/subjects.service';
+import { useAuth } from '@/components/common/AuthContext';
 import type { Subject as SubjectType } from '@/types/subject';
 
 type SubjectWithStats = Partial<SubjectType> & {
@@ -159,6 +161,7 @@ const mockSubjects: SubjectWithStats[] = [
 ];
 
 export const SubjectsPage = (props: SubjectsPageProps) => {
+  const { user } = useAuth();
   const {
     subjects: dbSubjects,
     loading,
@@ -169,27 +172,44 @@ export const SubjectsPage = (props: SubjectsPageProps) => {
   } = useSubjects();
   const [subjectsWithStats, setSubjectsWithStats] = useState<SubjectWithStats[]>([]);
 
-  // Transform database subjects to include mock stats (temporary until we implement stats)
+  // Transform database subjects to include real stats from the database
   useEffect(() => {
-    if (dbSubjects.length > 0) {
-      const enriched = dbSubjects.map((subject, idx) => ({
-        ...subject,
-        progress: Math.floor(Math.random() * 40) + 60, // 60-100
-        passingChance: Math.floor(Math.random() * 40) + 60, // 60-100
-        quizzesTaken: Math.floor(Math.random() * 10) + 1,
-        averageScore: Math.floor(Math.random() * 30) + 70,
-        lastStudied: `${Math.floor(Math.random() * 5) + 1} hours ago`,
-        totalMaterials: Math.floor(Math.random() * 15) + 5,
-        studyHours: Math.floor(Math.random() * 20) + 10,
-        weakTopics: ['Topic 1', 'Topic 2'],
-        strongTopics: ['Topic 3', 'Topic 4'],
-        nextMilestone: 'Complete next quiz',
-      }));
-      setSubjectsWithStats(enriched);
-    } else if (!loading) {
-      setSubjectsWithStats([]);
-    }
-  }, [dbSubjects, loading]);
+    const fetchSubjectsWithStats = async () => {
+      if (dbSubjects.length > 0 && user?.id) {
+        try {
+          const enriched = await Promise.all(
+            dbSubjects.map(async subject => {
+              const stats = await getSubjectStats(subject.id, user.id);
+
+              return {
+                ...subject,
+                progress: 0, // Will be calculated from topic mastery
+                passingChance: 0, // Will be calculated from quiz attempts
+                quizzesTaken: stats.totalQuizzes,
+                averageScore: 0, // Will be calculated from quiz attempts
+                lastStudied: undefined,
+                totalMaterials: stats.totalMaterials,
+                studyHours: stats.hoursStudied,
+                weakTopics: [] as string[],
+                strongTopics: [] as string[],
+                nextMilestone:
+                  stats.totalQuizzes === 0 ? 'Take your first quiz' : 'Complete next quiz',
+              };
+            })
+          );
+          setSubjectsWithStats(enriched);
+        } catch (err) {
+          console.error('Error enriching subjects with stats:', err);
+          // Fall back to just the basic subject data
+          setSubjectsWithStats(dbSubjects as SubjectWithStats[]);
+        }
+      } else if (!loading) {
+        setSubjectsWithStats([]);
+      }
+    };
+
+    fetchSubjectsWithStats();
+  }, [dbSubjects, loading, user]);
 
   const subjects = subjectsWithStats;
   const [searchQuery, setSearchQuery] = useState('');
@@ -417,62 +437,105 @@ export const SubjectsPage = (props: SubjectsPageProps) => {
                           {subject.name}
                         </h3>
                         <p className="text-xs lg:text-sm text-slate-600">
-                          {subject.quizzesTaken} quizzes • {subject.totalMaterials} materials
+                          {subject.quizzesTaken || 0} quizzes • {subject.totalMaterials || 0}{' '}
+                          materials
                         </p>
                       </div>
                       <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
                     </div>
 
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-slate-600">Progress</span>
-                        <span className="text-sm font-bold text-slate-900">
-                          {subject.progress}%
-                        </span>
-                      </div>
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full bg-gradient-to-r ${subject.color} rounded-full transition-all duration-500`}
-                          style={{
-                            width: `${subject.progress}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      <div
-                        className={`p-2 lg:p-3 rounded-lg ${getPassingChanceColor(subject.passingChance ?? 0)}`}
-                      >
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <PassingIcon className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                          <span className="text-[10px] lg:text-xs font-semibold">Passing</span>
-                        </div>
-                        <p className="text-lg lg:text-xl font-bold">
-                          {subject.passingChance ?? 0}%
-                        </p>
-                      </div>
-                      <div className="p-2 lg:p-3 rounded-lg bg-slate-50 border border-slate-200">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Trophy className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-slate-600" />
-                          <span className="text-[10px] lg:text-xs font-semibold text-slate-600">
-                            Avg Score
+                    {/* Progress Bar - only show if there's data */}
+                    {(subject.quizzesTaken || 0) > 0 ? (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-slate-600">Progress</span>
+                          <span className="text-sm font-bold text-slate-900">
+                            {subject.progress || 0}%
                           </span>
                         </div>
-                        <p className="text-lg lg:text-xl font-bold text-slate-900">
-                          {subject.averageScore ?? 0}%
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full bg-gradient-to-r ${subject.color} rounded-full transition-all duration-500`}
+                            style={{
+                              width: `${subject.progress || 0}%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-xs text-blue-700 font-medium">
+                          Take your first quiz to see progress
                         </p>
                       </div>
-                    </div>
+                    )}
+
+                    {/* Stats Grid - only show if there's quiz data */}
+                    {(subject.quizzesTaken || 0) > 0 ? (
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div
+                          className={`p-2 lg:p-3 rounded-lg ${getPassingChanceColor(subject.passingChance ?? 0)}`}
+                        >
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <PassingIcon className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                            <span className="text-[10px] lg:text-xs font-semibold">Passing</span>
+                          </div>
+                          <p className="text-lg lg:text-xl font-bold">
+                            {subject.passingChance ?? 0}%
+                          </p>
+                        </div>
+                        <div className="p-2 lg:p-3 rounded-lg bg-slate-50 border border-slate-200">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Trophy className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-slate-600" />
+                            <span className="text-[10px] lg:text-xs font-semibold text-slate-600">
+                              Avg Score
+                            </span>
+                          </div>
+                          <p className="text-lg lg:text-xl font-bold text-slate-900">
+                            {subject.averageScore ?? 0}%
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="p-2 lg:p-3 rounded-lg bg-slate-50 border border-slate-200">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Clock className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-slate-600" />
+                            <span className="text-[10px] lg:text-xs font-semibold text-slate-600">
+                              Study Time
+                            </span>
+                          </div>
+                          <p className="text-lg lg:text-xl font-bold text-slate-900">
+                            {subject.studyHours || 0}h
+                          </p>
+                        </div>
+                        <div className="p-2 lg:p-3 rounded-lg bg-slate-50 border border-slate-200">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <FileText className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-slate-600" />
+                            <span className="text-[10px] lg:text-xs font-semibold text-slate-600">
+                              Materials
+                            </span>
+                          </div>
+                          <p className="text-lg lg:text-xl font-bold text-slate-900">
+                            {subject.totalMaterials || 0}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{subject.lastStudied}</span>
-                      </div>
+                      {subject.lastStudied ? (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{subject.lastStudied}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>Just created</span>
+                        </div>
+                      )}
                       {subject.upcomingQuiz && (
                         <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg">
                           <Calendar className="w-3 h-3" />

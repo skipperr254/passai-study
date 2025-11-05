@@ -72,30 +72,56 @@ export const DashboardPage = (props: DashboardPageProps) => {
   const navigate = useNavigate();
   const { subjects: dbSubjects, loading: subjectsLoading, error: subjectsError } = useSubjects();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | undefined>(undefined);
-  const { progressData, loading: dashboardLoading } = useDashboard(selectedSubjectId);
+  const {
+    subjectPerformance,
+    progressData,
+    loading: dashboardLoading,
+  } = useDashboard(selectedSubjectId);
 
   const [subjectsWithStats, setSubjectsWithStats] = useState<SubjectWithStats[]>([]);
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
 
-  // Transform database subjects to include mock stats (temporary until we implement full stats)
+  // Transform database subjects to include real stats from dashboard service
   useEffect(() => {
-    if (dbSubjects.length > 0) {
-      const enriched = dbSubjects.map(subject => ({
-        ...subject,
-        progress: Math.floor(Math.random() * 40) + 60, // 60-100
-        passingChance: Math.floor(Math.random() * 40) + 60, // 60-100
-        quizzesTaken: Math.floor(Math.random() * 10) + 1,
-        averageScore: Math.floor(Math.random() * 30) + 70,
-        lastStudied: `${Math.floor(Math.random() * 5) + 1} hours ago`,
-      }));
+    if (dbSubjects.length > 0 && subjectPerformance.length > 0) {
+      const enriched = dbSubjects.map(subject => {
+        const perf = subjectPerformance.find(p => p.subjectId === subject.id);
+
+        return {
+          ...subject,
+          progress: 0, // Will be calculated from topic mastery later
+          passingChance: perf?.passingChance || 0,
+          quizzesTaken: perf?.quizzesTaken || 0,
+          averageScore: perf?.averageScore || 0,
+          lastStudied: perf?.lastAttempt
+            ? `${Math.floor((Date.now() - new Date(perf.lastAttempt).getTime()) / (1000 * 60 * 60))}h ago`
+            : undefined,
+        };
+      });
       setSubjectsWithStats(enriched);
 
       // Set the first subject as selected if none is selected
       if (!selectedSubjectId && enriched.length > 0) {
         setSelectedSubjectId(enriched[0].id);
       }
+    } else if (dbSubjects.length > 0 && !dashboardLoading) {
+      // If no performance data yet (no quizzes taken), use basic subject data
+      const basicEnriched = dbSubjects.map(subject => ({
+        ...subject,
+        progress: 0,
+        passingChance: 0,
+        quizzesTaken: 0,
+        averageScore: 0,
+        lastStudied: undefined,
+      }));
+      setSubjectsWithStats(basicEnriched);
+
+      // Set the first subject as selected if none is selected
+      if (!selectedSubjectId && basicEnriched.length > 0) {
+        setSelectedSubjectId(basicEnriched[0].id);
+      }
     }
-  }, [dbSubjects, selectedSubjectId]);
+  }, [dbSubjects, subjectPerformance, selectedSubjectId, dashboardLoading]);
 
   const subjects = subjectsWithStats.length > 0 ? subjectsWithStats : props.subjects || [];
   const selectedSubject = subjects.find(s => s.id === selectedSubjectId) || subjects[0];
