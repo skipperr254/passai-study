@@ -85,7 +85,7 @@ export const createTopic = async (
   subjectId: string,
   name: string,
   description?: string,
-  difficulty: 'beginner' | 'intermediate' | 'advanced' = 'medium',
+  difficulty: 'beginner' | 'intermediate' | 'advanced' = 'intermediate',
   estimatedStudyTime: number = 30
 ): Promise<Topic | null> => {
   try {
@@ -121,7 +121,12 @@ export const updateTopic = async (
   updates: Partial<Omit<Topic, 'id' | 'createdAt' | 'updatedAt'>>
 ): Promise<Topic | null> => {
   try {
-    const dbUpdates: any = {};
+    const dbUpdates: {
+      name?: string;
+      description?: string | null;
+      difficulty?: 'beginner' | 'intermediate' | 'advanced';
+      estimated_study_time?: number;
+    } = {};
 
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.description !== undefined) dbUpdates.description = updates.description;
@@ -197,7 +202,7 @@ export const getTopicMasteryBySubject = async (
     }
 
     return (
-      data?.map((row: any) => {
+      data?.map((row: TopicMasteryDbRow & { topic?: TopicDbRow }) => {
         const mastery = mapTopicMasteryFromDb(row);
         if (row.topic) {
           mastery.topic = mapTopicFromDb(row.topic);
@@ -278,7 +283,7 @@ export const getWeakTopics = async (
     }
 
     return (
-      data?.map((row: any) => {
+      data?.map((row: TopicMasteryDbRow & { topic?: TopicDbRow }) => {
         const mastery = mapTopicMasteryFromDb(row);
         if (row.topic) {
           mastery.topic = mapTopicFromDb(row.topic);
@@ -321,7 +326,7 @@ export const getStrongTopics = async (
     }
 
     return (
-      data?.map((row: any) => {
+      data?.map((row: TopicMasteryDbRow & { topic?: TopicDbRow }) => {
         const mastery = mapTopicMasteryFromDb(row);
         if (row.topic) {
           mastery.topic = mapTopicFromDb(row.topic);
