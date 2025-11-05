@@ -383,17 +383,20 @@ export const MaterialsPage = ({ preSelectedSubjectId }: MaterialsPageProps) => {
     return (
       <div className="h-full flex items-center justify-center p-4">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Book className="w-8 h-8 text-slate-400" />
+          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Upload className="w-10 h-10 text-slate-400" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 mb-2">No subjects yet</h3>
-          <p className="text-slate-600 mb-6">Create a subject first before uploading materials</p>
+          <h3 className="text-2xl font-bold text-slate-900 mb-3">No subjects yet</h3>
+          <p className="text-slate-600 mb-6">
+            Please create a subject first to start uploading materials. Materials are organized by
+            subject to help you study more effectively.
+          </p>
           <button
             onClick={() => navigate('/app/subjects')}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all"
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all inline-flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
-            Create Subject
+            <span>Create Your First Subject</span>
           </button>
         </div>
       </div>

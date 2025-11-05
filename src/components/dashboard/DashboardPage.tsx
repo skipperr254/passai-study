@@ -182,14 +182,23 @@ export const DashboardPage = (props: DashboardPageProps) => {
     return (
       <div className="h-full overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-6 lg:p-8">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Book className="w-8 h-8 text-slate-400" />
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center max-w-md">
+              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <TrendingUp className="w-10 h-10 text-slate-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">No subjects yet</h3>
+              <p className="text-slate-600 mb-6">
+                Please create a subject to see your statistics and track your learning progress.
+              </p>
+              <button
+                onClick={() => (window.location.href = '/app/subjects')}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all inline-flex items-center gap-2"
+              >
+                <Book className="w-5 h-5" />
+                <span>Go to Subjects</span>
+              </button>
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-2">No subjects yet</h3>
-            <p className="text-slate-600 mb-4">
-              Add your first subject to start tracking your progress
-            </p>
           </div>
         </div>
       </div>

@@ -191,7 +191,7 @@ export const SubjectsPage = (props: SubjectsPageProps) => {
     }
   }, [dbSubjects, loading]);
 
-  const subjects = subjectsWithStats.length > 0 ? subjectsWithStats : mockSubjects;
+  const subjects = subjectsWithStats;
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBy, setFilterBy] = useState<'all' | 'needs-attention' | 'on-track' | 'excelling'>(
     'all'

@@ -33,9 +33,12 @@ import {
   BarChart3,
   Lightbulb,
   Flag,
+  Plus,
 } from 'lucide-react';
 import { VerificationQuiz } from '@/components/quiz';
 import { useAuth } from '@/components/common/AuthContext';
+import { useSubjects } from '@/hooks/useSubjects';
+import { useNavigate } from 'react-router-dom';
 import {
   getTodaysTasks,
   startTask,
@@ -285,6 +288,8 @@ type StudyPlanPageProps = {
 };
 export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { subjects: dbSubjects, loading: subjectsLoading } = useSubjects();
   const [selectedSubject, setSelectedSubject] = useState<Subject>(
     preSelectedSubjectId
       ? mockSubjects.find(s => s.id === preSelectedSubjectId) || mockSubjects[0]
@@ -578,6 +583,44 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Show loading state
+  if (subjectsLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <Book className="w-12 h-12 text-blue-600 animate-pulse mx-auto mb-4" />
+          <p className="text-slate-600">Loading study plan...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no subjects exist
+  if (dbSubjects.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Calendar className="w-10 h-10 text-slate-400" />
+          </div>
+          <h3 className="text-2xl font-bold text-slate-900 mb-3">No subjects yet</h3>
+          <p className="text-slate-600 mb-6">
+            Please create a subject first to access your personalized study plan and track your
+            progress.
+          </p>
+          <button
+            onClick={() => navigate('/app/subjects')}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all inline-flex items-center gap-2"
+          >
+            <Book className="w-5 h-5" />
+            <span>Create Your First Subject</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-y-auto pb-4">
       {/* Header Section */}
