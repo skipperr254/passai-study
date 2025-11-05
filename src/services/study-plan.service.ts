@@ -69,6 +69,11 @@ export interface MistakePattern {
   frequency: number;
   examples: string[];
   severity: 'high' | 'medium' | 'low';
+  incorrectAnswers?: Array<{
+    question: string;
+    userAnswer: string;
+    correctAnswer: string;
+  }>;
 }
 
 export interface QuestionTypePerformance {
@@ -161,7 +166,7 @@ export async function analyzeStudyPerformance(
 
     if (attemptsError) throw attemptsError;
 
-    // 4. Get question responses for these attempts
+    // 4. Get question responses for these attempts (including user answers)
     const attemptIds = attempts?.map(a => a.id) || [];
     const { data: responses, error: responsesError } = await supabase
       .from('question_responses')
@@ -170,12 +175,15 @@ export async function analyzeStudyPerformance(
         id,
         attempt_id,
         question_id,
+        user_answer,
         is_correct,
         time_spent,
         questions (
           id,
           question,
           type,
+          correct_answer,
+          options,
           topic_id,
           topics (
             id,
@@ -281,29 +289,44 @@ export async function analyzeStudyPerformance(
       })
     );
 
-    // 8. Identify mistake patterns
+    // 8. Identify mistake patterns with user answers
     const incorrectResponses =
       responses?.filter(r => !(r as Record<string, unknown>).is_correct) || [];
-    const mistakesByTopic = new Map<string, string[]>();
+    const mistakesByTopic = new Map<
+      string,
+      Array<{
+        question: string;
+        userAnswer: string;
+        correctAnswer: string;
+      }>
+    >();
 
     incorrectResponses.forEach(response => {
-      const questions = (response as Record<string, unknown>).questions as
-        | Record<string, unknown>
-        | undefined;
+      const responseData = response as Record<string, unknown>;
+      const questions = responseData.questions as Record<string, unknown> | undefined;
       const topics = questions?.topics as { name?: string } | undefined;
       const topicName = topics?.name || 'Unknown';
+
       const question = (questions?.question as string) || '';
+      const userAnswer = JSON.stringify(responseData.answer);
+      const correctAnswer = JSON.stringify(questions?.correct_answer);
+
       const existing = mistakesByTopic.get(topicName) || [];
-      existing.push(question);
+      existing.push({
+        question,
+        userAnswer,
+        correctAnswer,
+      });
       mistakesByTopic.set(topicName, existing);
     });
 
     const commonMistakes: MistakePattern[] = Array.from(mistakesByTopic.entries())
-      .map(([concept, examples]) => ({
+      .map(([concept, mistakes]) => ({
         concept,
-        frequency: examples.length,
-        examples: examples.slice(0, 3), // Top 3 examples
-        severity: (examples.length >= 5 ? 'high' : examples.length >= 3 ? 'medium' : 'low') as
+        frequency: mistakes.length,
+        examples: mistakes.slice(0, 3).map(m => m.question), // Top 3 example questions
+        incorrectAnswers: mistakes.slice(0, 3), // Include full answer details for AI analysis
+        severity: (mistakes.length >= 5 ? 'high' : mistakes.length >= 3 ? 'medium' : 'low') as
           | 'high'
           | 'medium'
           | 'low',
@@ -448,8 +471,21 @@ ${analysis.weakTopics.map(t => `- ${t.topicName}: ${t.masteryLevel.toFixed(1)}% 
 STRONG TOPICS (Maintain):
 ${analysis.strongTopics.map(t => `- ${t.topicName}: ${t.masteryLevel.toFixed(1)}% mastery`).join('\n')}
 
-COMMON MISTAKES:
-${analysis.commonMistakes.map(m => `- ${m.concept}: ${m.frequency} errors (${m.severity} severity)`).join('\n')}
+COMMON MISTAKES (with actual answers):
+${analysis.commonMistakes
+  .map(m => {
+    let result = `- ${m.concept}: ${m.frequency} errors (${m.severity} severity)`;
+    if (m.incorrectAnswers && m.incorrectAnswers.length > 0) {
+      result += '\n  Examples:';
+      m.incorrectAnswers.forEach((ia, idx) => {
+        result += `\n  ${idx + 1}. Q: "${ia.question}"`;
+        result += `\n     Student answered: ${ia.userAnswer}`;
+        result += `\n     Correct answer: ${ia.correctAnswer}`;
+      });
+    }
+    return result;
+  })
+  .join('\n')}
 
 QUESTION TYPE PERFORMANCE:
 ${analysis.questionTypes.map(qt => `- ${qt.type}: ${qt.averageScore.toFixed(1)}% (${qt.correctAnswers}/${qt.totalAttempted})`).join('\n')}
@@ -596,18 +632,44 @@ Response format (MUST be valid JSON):
 }
 
 /**
- * Save generated study plan to database
+ * Save generated study plan to database (both plan metadata and tasks)
  */
 export async function saveStudyPlan(
   userId: string,
   subjectId: string,
-  studyPlan: AIStudyPlan
+  studyPlan: AIStudyPlan,
+  analysis: StudyPlanAnalysis
 ): Promise<StudyTask[]> {
   try {
-    // Insert tasks into database
+    // First, save the study plan metadata
+    const { data: planData, error: planError } = await supabase
+      .from('study_plans')
+      .insert({
+        user_id: userId,
+        subject_id: subjectId,
+        analysis_version: 'v1',
+        confidence_level: studyPlan.overview.confidenceLevel,
+        overview: studyPlan.overview,
+        recommendations: studyPlan.recommendations,
+        study_schedule: studyPlan.studySchedule || null,
+        performance_snapshot: {
+          overallPerformance: analysis.overallPerformance,
+          weakTopics: analysis.weakTopics,
+          strongTopics: analysis.strongTopics,
+          recentAttempts: analysis.recentAttempts.slice(0, 5), // Save last 5 attempts
+        },
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (planError) throw planError;
+
+    // Insert tasks into database, linking them to the study plan
     const tasksToInsert = studyPlan.tasks.map(task => ({
       user_id: userId,
       subject_id: subjectId,
+      study_plan_id: planData.id, // Link to the study plan
       topic_id: task.topicId || null,
       title: task.title,
       description: `${task.description}\n\nReasoning: ${task.reasoning}`,
@@ -659,6 +721,101 @@ export async function saveStudyPlan(
 }
 
 /**
+ * Get existing active study plan for a subject
+ */
+export async function getActiveStudyPlan(
+  userId: string,
+  subjectId: string
+): Promise<{ analysis: StudyPlanAnalysis | null; plan: AIStudyPlan | null; tasks: StudyTask[] }> {
+  try {
+    // Get active study plan
+    const { data: planData, error: planError } = await supabase
+      .from('study_plans')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('subject_id', subjectId)
+      .eq('is_active', true)
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (planError) throw planError;
+
+    // If no active plan, return empty
+    if (!planData) {
+      return { analysis: null, plan: null, tasks: [] };
+    }
+
+    // Get tasks for this plan
+    const { data: tasksData, error: tasksError } = await supabase
+      .from('study_tasks')
+      .select('*, topics(id, name)')
+      .eq('study_plan_id', planData.id)
+      .order('created_at', { ascending: true });
+
+    if (tasksError) throw tasksError;
+
+    // Map tasks to StudyTask type
+    const tasks: StudyTask[] = (tasksData || []).map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      subjectId: row.subject_id,
+      topicId: row.topic_id,
+      topic: row.topics
+        ? {
+            id: row.topics.id,
+            name: row.topics.name,
+            subjectId: row.subject_id,
+            difficulty: 'intermediate' as const,
+            estimatedStudyTime: 0,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+          }
+        : undefined,
+      title: row.title,
+      description: row.description,
+      type: row.type as StudyTaskType,
+      priority: row.priority as TaskPriority,
+      estimatedTime: row.estimated_time,
+      timeSpent: row.time_spent,
+      status: row.status as 'pending' | 'in-progress' | 'completed' | 'skipped',
+      completedAt: row.completed_at,
+      requiresVerification: row.requires_verification,
+      verificationStatus: row.verification_status as
+        | 'pending'
+        | 'passed'
+        | 'failed'
+        | 'skipped'
+        | undefined,
+      verificationQuizId: row.verification_quiz_id,
+      dueDate: row.due_date,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+
+    // Reconstruct analysis from snapshot
+    const analysis: StudyPlanAnalysis = {
+      subjectId: planData.subject_id,
+      subjectName: '', // Will need to fetch subject name if needed
+      ...planData.performance_snapshot,
+    };
+
+    // Reconstruct AI study plan
+    const plan: AIStudyPlan = {
+      overview: planData.overview,
+      recommendations: planData.recommendations,
+      tasks: [], // Tasks are stored separately in study_tasks
+      studySchedule: planData.study_schedule,
+    };
+
+    return { analysis, plan, tasks };
+  } catch (error) {
+    console.error('Error fetching active study plan:', error);
+    return { analysis: null, plan: null, tasks: [] };
+  }
+}
+
+/**
  * Full workflow: Analyze performance and generate study plan
  */
 export async function createPersonalizedStudyPlan(
@@ -668,16 +825,28 @@ export async function createPersonalizedStudyPlan(
     availableHoursPerWeek?: number;
     focusArea?: 'weakTopics' | 'balanced' | 'testPrep';
     daysUntilTest?: number;
+    forceRegenerate?: boolean; // Force regeneration even if active plan exists
   }
 ): Promise<{ analysis: StudyPlanAnalysis; plan: AIStudyPlan; tasks: StudyTask[] }> {
-  // 1. Analyze performance
+  // 1. Check if there's an existing active plan (unless force regenerate)
+  if (!options?.forceRegenerate) {
+    const existing = await getActiveStudyPlan(userId, subjectId);
+    if (existing.plan && existing.tasks.length > 0) {
+      console.log('Returning existing active study plan');
+      // Fetch fresh analysis for completeness
+      const freshAnalysis = await analyzeStudyPerformance(userId, subjectId);
+      return { analysis: freshAnalysis, plan: existing.plan, tasks: existing.tasks };
+    }
+  }
+
+  // 2. Analyze performance
   const analysis = await analyzeStudyPerformance(userId, subjectId);
 
-  // 2. Generate AI study plan
+  // 3. Generate AI study plan
   const plan = await generateStudyPlan(analysis, options);
 
-  // 3. Save to database
-  const tasks = await saveStudyPlan(userId, subjectId, plan);
+  // 4. Save to database (this will automatically invalidate old plans)
+  const tasks = await saveStudyPlan(userId, subjectId, plan, analysis);
 
   return { analysis, plan, tasks };
 }

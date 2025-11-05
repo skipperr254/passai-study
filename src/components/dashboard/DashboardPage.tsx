@@ -129,9 +129,9 @@ export const DashboardPage = (props: DashboardPageProps) => {
   // Use progress data from dashboard or fallback to mock
   const quizData =
     progressData.length > 0
-      ? progressData.map((d, i) => ({ quizNumber: i + 1, score: d.score }))
+      ? progressData.map((d, i) => ({ quizNumber: i + 1, score: d.score || 0 }))
       : mockQuizData;
-  const maxScore = Math.max(...quizData.map(d => d.score));
+  const maxScore = Math.max(...quizData.map(d => d.score || 0));
   const currentScore = quizData[quizData.length - 1]?.score || 0;
   const daysLeft = 6;
   const materialsCount = subjects.reduce((acc, s) => acc + ((s.quizzesTaken || 0) > 0 ? 1 : 0), 0);
@@ -502,33 +502,41 @@ export const DashboardPage = (props: DashboardPageProps) => {
                 />
               ))}
 
-              <path
-                d={`M 0,${200 - quizData[0].score * 2} ${quizData.map((d, i) => `L ${(i * 800) / (quizData.length - 1)},${200 - d.score * 2}`).join(' ')} L 800,200 L 0,200 Z`}
-                fill="url(#scoreGradient)"
-              />
+              {quizData.length > 1 && (
+                <>
+                  <path
+                    d={`M 0,${200 - (quizData[0]?.score || 0) * 2} ${quizData.map((d, i) => `L ${(i * 800) / Math.max(1, quizData.length - 1)},${200 - (d.score || 0) * 2}`).join(' ')} L 800,200 L 0,200 Z`}
+                    fill="url(#scoreGradient)"
+                  />
 
-              <path
-                d={`M 0,${200 - quizData[0].score * 2} ${quizData.map((d, i) => `L ${(i * 800) / (quizData.length - 1)},${200 - d.score * 2}`).join(' ')}`}
-                fill="none"
-                stroke="url(#lineGradient)"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-
-              {quizData.map((d, i) => (
-                <g key={i}>
-                  <circle
-                    cx={(i * 800) / (quizData.length - 1)}
-                    cy={200 - d.score * 2}
-                    r="6"
-                    fill="white"
+                  <path
+                    d={`M 0,${200 - (quizData[0]?.score || 0) * 2} ${quizData.map((d, i) => `L ${(i * 800) / Math.max(1, quizData.length - 1)},${200 - (d.score || 0) * 2}`).join(' ')}`}
+                    fill="none"
                     stroke="url(#lineGradient)"
                     strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
-                  <title>{`Quiz ${d.quizNumber}: ${d.score}%`}</title>
-                </g>
-              ))}
+                </>
+              )}
+
+              {quizData.map((d, i) => {
+                const xPos =
+                  quizData.length > 1 ? (i * 800) / Math.max(1, quizData.length - 1) : 400;
+                return (
+                  <g key={i}>
+                    <circle
+                      cx={xPos}
+                      cy={200 - (d.score || 0) * 2}
+                      r="6"
+                      fill="white"
+                      stroke="url(#lineGradient)"
+                      strokeWidth="3"
+                    />
+                    <title>{`Quiz ${d.quizNumber}: ${d.score || 0}%`}</title>
+                  </g>
+                );
+              })}
             </svg>
 
             <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-[10px] lg:text-xs font-medium text-slate-500">

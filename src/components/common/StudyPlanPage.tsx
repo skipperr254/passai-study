@@ -59,6 +59,7 @@ import {
 import {
   createPersonalizedStudyPlan,
   analyzeStudyPerformance,
+  getActiveStudyPlan,
   type AIStudyPlan,
   type StudyPlanAnalysis,
 } from '../../services/study-plan.service';
@@ -301,11 +302,7 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
   const { subjects: dbSubjects, loading: subjectsLoading } = useSubjects();
   const [hasQuizAttempts, setHasQuizAttempts] = useState(false);
   const [checkingQuizAttempts, setCheckingQuizAttempts] = useState(true);
-  const [selectedSubject, setSelectedSubject] = useState<Subject>(
-    preSelectedSubjectId
-      ? mockSubjects.find(s => s.id === preSelectedSubjectId) || mockSubjects[0]
-      : mockSubjects[0]
-  );
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [tasks, setTasks] = useState<StudyTask[]>(mockTasks);
   const [activeTask, setActiveTask] = useState<StudyTask | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -360,10 +357,57 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
     .filter(t => !t.completed)
     .reduce((acc, t) => acc + t.estimatedTime, 0);
 
+  // Initialize selected subject from real database subjects
+  useEffect(() => {
+    if (!subjectsLoading && dbSubjects.length > 0 && !selectedSubject) {
+      // Convert database subject to local Subject type
+      const firstDbSubject = dbSubjects[0];
+      const convertedSubject: Subject = {
+        id: firstDbSubject.id,
+        name: firstDbSubject.name,
+        color: firstDbSubject.color || 'from-blue-500 to-blue-600',
+        mastery: 0, // Will be populated from real data
+        passingChance: 0, // Will be calculated
+        weakTopics: [],
+        testDate: firstDbSubject.testDate || 'Not set',
+        daysUntilTest: firstDbSubject.testDate
+          ? Math.ceil(
+              (new Date(firstDbSubject.testDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+            )
+          : 0,
+      };
+
+      // If preSelectedSubjectId is provided, find that subject
+      if (preSelectedSubjectId) {
+        const preSelected = dbSubjects.find(s => s.id === preSelectedSubjectId);
+        if (preSelected) {
+          setSelectedSubject({
+            id: preSelected.id,
+            name: preSelected.name,
+            color: preSelected.color || 'from-blue-500 to-blue-600',
+            mastery: 0,
+            passingChance: 0,
+            weakTopics: [],
+            testDate: preSelected.testDate || 'Not set',
+            daysUntilTest: preSelected.testDate
+              ? Math.ceil(
+                  (new Date(preSelected.testDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                )
+              : 0,
+          });
+        } else {
+          setSelectedSubject(convertedSubject);
+        }
+      } else {
+        setSelectedSubject(convertedSubject);
+      }
+    }
+  }, [dbSubjects, subjectsLoading, preSelectedSubjectId, selectedSubject]);
+
   // Check if user has any quiz attempts for the selected subject
   useEffect(() => {
     const checkQuizAttempts = async () => {
-      if (!user || !selectedSubject.id) {
+      if (!user || !selectedSubject?.id) {
         setCheckingQuizAttempts(false);
         return;
       }
@@ -388,11 +432,12 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
 
         const quizIds = quizzes.map(q => q.id);
 
-        // Check if there are any attempts for these quizzes
+        // Check if there are any COMPLETED attempts for these quizzes
         const { data: attempts, error: attemptsError } = await supabase
           .from('quiz_attempts')
           .select('id')
           .in('quiz_id', quizIds)
+          .eq('status', 'completed')
           .limit(1);
 
         if (attemptsError) throw attemptsError;
@@ -407,19 +452,30 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
     };
 
     checkQuizAttempts();
-  }, [user, selectedSubject.id]);
+  }, [user, selectedSubject?.id]);
 
-  // Fetch real data
+  // Fetch real data and existing study plan
   useEffect(() => {
     const fetchStudyData = async () => {
-      if (!user || !selectedSubject.id || !hasQuizAttempts) return;
+      if (!user || !selectedSubject?.id || !hasQuizAttempts) return;
 
       try {
         setLoadingData(true);
 
-        // Fetch existing tasks for selected subject
-        const tasksData = await getTodaysTasks(user.id, selectedSubject.id);
-        setRealTasks(tasksData);
+        // Try to load existing active study plan first
+        const existingPlan = await getActiveStudyPlan(user.id, selectedSubject.id);
+        if (existingPlan.plan && existingPlan.tasks.length > 0) {
+          console.log('Loaded existing study plan from database');
+          setAiStudyPlan(existingPlan.plan);
+          setRealTasks(existingPlan.tasks);
+          // Fetch fresh analysis for display
+          const freshAnalysis = await analyzeStudyPerformance(user.id, selectedSubject.id);
+          setStudyPlanAnalysis(freshAnalysis);
+        } else {
+          // No existing plan, just load tasks
+          const tasksData = await getTodaysTasks(user.id, selectedSubject.id);
+          setRealTasks(tasksData);
+        }
 
         // Fetch topic mastery
         const masteryData = await getTopicMasteryBySubject(user.id, selectedSubject.id);
@@ -440,27 +496,34 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
     };
 
     fetchStudyData();
-  }, [user, selectedSubject.id, hasQuizAttempts]);
+  }, [user, selectedSubject?.id, hasQuizAttempts]);
 
   // Function to generate AI-powered study plan
-  const handleGenerateStudyPlan = async () => {
-    if (!user || !selectedSubject.id) return;
+  const handleGenerateStudyPlan = async (forceRegenerate = false) => {
+    if (!user || !selectedSubject?.id) return;
 
     try {
       setGeneratingPlan(true);
-      toast.loading('Analyzing your performance...', { id: 'study-plan' });
+      const message = forceRegenerate
+        ? 'Regenerating study plan...'
+        : 'Analyzing your performance...';
+      toast.loading(message, { id: 'study-plan' });
 
       // Create personalized study plan
       const result = await createPersonalizedStudyPlan(user.id, selectedSubject.id, {
         focusArea: 'weakTopics',
         availableHoursPerWeek: 10,
+        forceRegenerate,
       });
 
       setStudyPlanAnalysis(result.analysis);
       setAiStudyPlan(result.plan);
       setRealTasks(result.tasks);
 
-      toast.success('Study plan generated successfully!', { id: 'study-plan', duration: 4000 });
+      const successMessage = forceRegenerate
+        ? 'Study plan regenerated successfully!'
+        : 'Study plan generated successfully!';
+      toast.success(successMessage, { id: 'study-plan', duration: 4000 });
     } catch (error) {
       console.error('Error generating study plan:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate study plan';
@@ -471,7 +534,7 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
   };
 
   // Display mastery: use real data if available, fallback to mock
-  const displayMastery = realTasks.length > 0 ? subjectMastery : selectedSubject.mastery;
+  const displayMastery = realTasks.length > 0 ? subjectMastery : selectedSubject?.mastery || 0;
   const displayWeakTopics = topicMastery.filter(tm => tm.masteryLevel < 70).slice(0, 3);
 
   // Get current task's timer value
@@ -568,7 +631,7 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
   const handleCompleteTask = async (taskId: string, verified: boolean = false) => {
     // Update in database if real task
     const realTask = realTasks.find(t => t.id === taskId);
-    if (realTask && user) {
+    if (realTask && user && selectedSubject) {
       const timeSpent = Math.floor((taskTimers[taskId] || 0) / 60); // convert seconds to minutes
       await completeTaskService(taskId, timeSpent);
 
@@ -739,6 +802,18 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
     );
   }
 
+  // Show loading if subject not yet selected
+  if (!selectedSubject) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <Book className="w-12 h-12 text-blue-600 animate-pulse mx-auto mb-4" />
+          <p className="text-slate-600">Loading study plan...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-y-auto pb-4">
       {/* Header Section */}
@@ -747,18 +822,40 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
           {/* Subject Selector - Mobile Horizontal Scroll */}
           <div className="lg:hidden mb-4 -mx-4 px-4 overflow-x-auto hide-scrollbar">
             <div className="flex gap-2 pb-1">
-              {mockSubjects.map(subject => (
-                <button
-                  key={subject.id}
-                  onClick={() => setSelectedSubject(subject)}
-                  className={`flex-shrink-0 px-3 py-2 rounded-xl transition-all active:scale-95 ${selectedSubject.id === subject.id ? `bg-gradient-to-r ${subject.color} text-white shadow-md` : 'bg-white border-2 border-slate-200 text-slate-700'}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Book className="w-4 h-4" />
-                    <span className="text-sm font-semibold whitespace-nowrap">{subject.name}</span>
-                  </div>
-                </button>
-              ))}
+              {dbSubjects.map(dbSubject => {
+                const subjectColor = dbSubject.color || 'from-blue-500 to-blue-600';
+                return (
+                  <button
+                    key={dbSubject.id}
+                    onClick={() => {
+                      const daysUntil = dbSubject.testDate
+                        ? Math.ceil(
+                            (new Date(dbSubject.testDate).getTime() - Date.now()) /
+                              (1000 * 60 * 60 * 24)
+                          )
+                        : 0;
+                      setSelectedSubject({
+                        id: dbSubject.id,
+                        name: dbSubject.name,
+                        color: subjectColor,
+                        mastery: 0,
+                        passingChance: 0,
+                        weakTopics: [],
+                        testDate: dbSubject.testDate || 'Not set',
+                        daysUntilTest: daysUntil,
+                      });
+                    }}
+                    className={`flex-shrink-0 px-3 py-2 rounded-xl transition-all active:scale-95 ${selectedSubject.id === dbSubject.id ? `bg-gradient-to-r ${subjectColor} text-white shadow-md` : 'bg-white border-2 border-slate-200 text-slate-700'}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Book className="w-4 h-4" />
+                      <span className="text-sm font-semibold whitespace-nowrap">
+                        {dbSubject.name}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -777,10 +874,30 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
             <div className="hidden lg:block">
               <select
                 value={selectedSubject.id}
-                onChange={e => setSelectedSubject(mockSubjects.find(s => s.id === e.target.value)!)}
+                onChange={e => {
+                  const dbSubject = dbSubjects.find(s => s.id === e.target.value);
+                  if (dbSubject) {
+                    const daysUntil = dbSubject.testDate
+                      ? Math.ceil(
+                          (new Date(dbSubject.testDate).getTime() - Date.now()) /
+                            (1000 * 60 * 60 * 24)
+                        )
+                      : 0;
+                    setSelectedSubject({
+                      id: dbSubject.id,
+                      name: dbSubject.name,
+                      color: dbSubject.color || 'from-blue-500 to-blue-600',
+                      mastery: 0,
+                      passingChance: 0,
+                      weakTopics: [],
+                      testDate: dbSubject.testDate || 'Not set',
+                      daysUntilTest: daysUntil,
+                    });
+                  }
+                }}
                 className="px-4 py-3 bg-white border-2 border-slate-200 rounded-xl font-semibold text-slate-900 cursor-pointer hover:border-blue-400 transition-all"
               >
-                {mockSubjects.map(subject => (
+                {dbSubjects.map(subject => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>
@@ -846,151 +963,133 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
             </div>
           </div>
 
-          {/* Progress Overview */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 lg:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-base lg:text-lg font-bold text-slate-900 mb-1">
-                  Today's Progress
-                </h3>
-                <p className="text-sm text-slate-600">
-                  {completedTasks} of {totalTasks} tasks completed
-                </p>
+          {/* Progress Overview - Only show if AI plan exists */}
+          {aiStudyPlan && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 lg:p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-base lg:text-lg font-bold text-slate-900 mb-1">
+                    Today's Progress
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    {completedTasks} of {totalTasks} tasks completed
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-blue-200">
+                  <Trophy className="w-5 h-5 text-amber-500" />
+                  <span className="text-lg font-bold text-slate-900">{completedTasks}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-blue-200">
-                <Trophy className="w-5 h-5 text-amber-500" />
-                <span className="text-lg font-bold text-slate-900">{completedTasks}</span>
-              </div>
-            </div>
 
-            <div className="relative h-3 bg-blue-100 rounded-full overflow-hidden mb-2">
-              <div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500"
-                style={{
-                  width: `${progressPercentage}%`,
-                }}
-              />
+              <div className="relative h-3 bg-blue-100 rounded-full overflow-hidden mb-2">
+                <div
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${progressPercentage}%`,
+                  }}
+                />
+              </div>
+              <p className="text-xs text-slate-600 font-medium">
+                {progressPercentage.toFixed(0)}% Complete
+              </p>
             </div>
-            <p className="text-xs text-slate-600 font-medium">
-              {progressPercentage.toFixed(0)}% Complete
-            </p>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Main Content */}
       <div className="px-4 py-4 lg:px-8 lg:py-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Weak Topics Section */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <h2 className="text-lg lg:text-xl font-bold text-slate-900">Focus Areas</h2>
+          {/* Show Generate Plan CTA if no AI plan exists yet */}
+          {!aiStudyPlan && !generatingPlan && (
+            <section className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-6 lg:p-8">
+              <div className="text-center max-w-2xl mx-auto">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-3">
+                  Generate Your Personalized Study Plan
+                </h2>
+                <p className="text-slate-600 mb-6 text-sm lg:text-base">
+                  Our AI will analyze your quiz performance, identify your strengths and weaknesses,
+                  and create a custom study plan tailored to help you master this subject.
+                </p>
+                <button
+                  onClick={() => handleGenerateStudyPlan(false)}
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg active:scale-95 transition-all"
+                >
+                  <Brain className="w-5 h-5" />
+                  <span>Generate Study Plan with AI</span>
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <p className="text-xs text-slate-500 mt-4">
+                  ✨ Powered by GPT-4 • Takes about 10-15 seconds
+                </p>
               </div>
-              <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
-                View All
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+            </section>
+          )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              {displayWeakTopics.length > 0
-                ? displayWeakTopics.map(
-                    mastery =>
-                      mastery.topic && (
-                        <div
-                          key={mastery.id}
-                          className="bg-white rounded-xl border-2 border-slate-200 p-4 hover:border-blue-300 transition-all"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <h3 className="font-bold text-slate-900 text-sm">
-                              {mastery.topic.name}
-                            </h3>
-                            <div
-                              className={`px-2 py-1 rounded-lg text-xs font-bold ${mastery.trend === 'up' ? 'bg-green-100 text-green-700' : mastery.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}
-                            >
-                              {mastery.trend === 'up'
-                                ? '↗'
-                                : mastery.trend === 'down'
-                                  ? '↘'
-                                  : '→'}
-                            </div>
-                          </div>
+          {/* Focus Areas Section - Only show if AI plan exists */}
+          {aiStudyPlan && displayWeakTopics.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                  <h2 className="text-lg lg:text-xl font-bold text-slate-900">Focus Areas</h2>
+                </div>
+                <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                  View All
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
 
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-slate-600">Mastery</span>
-                              <span
-                                className={`font-bold ${getMasteryColor(mastery.masteryLevel)}`}
-                              >
-                                {Math.round(mastery.masteryLevel)}%
-                              </span>
-                            </div>
-
-                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full bg-gradient-to-r ${getMasteryBg(mastery.masteryLevel)} rounded-full transition-all`}
-                                style={{
-                                  width: `${mastery.masteryLevel}%`,
-                                }}
-                              />
-                            </div>
-
-                            <div className="flex items-center justify-between text-xs text-slate-600">
-                              <span>{mastery.totalQuizzesTaken} quizzes</span>
-                              <span>
-                                Last:{' '}
-                                {mastery.lastQuizScore ? Math.round(mastery.lastQuizScore) : 0}%
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                  )
-                : mockTopics
-                    .filter(t => t.mastery < 75)
-                    .slice(0, 3)
-                    .map(topic => (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                {displayWeakTopics.map(
+                  mastery =>
+                    mastery.topic && (
                       <div
-                        key={topic.id}
+                        key={mastery.id}
                         className="bg-white rounded-xl border-2 border-slate-200 p-4 hover:border-blue-300 transition-all"
                       >
                         <div className="flex items-start justify-between mb-3">
-                          <h3 className="font-bold text-slate-900 text-sm">{topic.name}</h3>
+                          <h3 className="font-bold text-slate-900 text-sm">{mastery.topic.name}</h3>
                           <div
-                            className={`px-2 py-1 rounded-lg text-xs font-bold ${topic.trend === 'up' ? 'bg-green-100 text-green-700' : topic.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}
+                            className={`px-2 py-1 rounded-lg text-xs font-bold ${mastery.trend === 'up' ? 'bg-green-100 text-green-700' : mastery.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}
                           >
-                            {topic.trend === 'up' ? '↗' : topic.trend === 'down' ? '↘' : '→'}
+                            {mastery.trend === 'up' ? '↗' : mastery.trend === 'down' ? '↘' : '→'}
                           </div>
                         </div>
 
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-slate-600">Mastery</span>
-                            <span className={`font-bold ${getMasteryColor(topic.mastery)}`}>
-                              {topic.mastery}%
+                            <span className={`font-bold ${getMasteryColor(mastery.masteryLevel)}`}>
+                              {Math.round(mastery.masteryLevel)}%
                             </span>
                           </div>
 
                           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                             <div
-                              className={`h-full bg-gradient-to-r ${getMasteryBg(topic.mastery)} rounded-full transition-all`}
+                              className={`h-full bg-gradient-to-r ${getMasteryBg(mastery.masteryLevel)} rounded-full transition-all`}
                               style={{
-                                width: `${topic.mastery}%`,
+                                width: `${mastery.masteryLevel}%`,
                               }}
                             />
                           </div>
 
                           <div className="flex items-center justify-between text-xs text-slate-600">
-                            <span>{topic.quizzesTaken} quizzes</span>
-                            <span>Last: {topic.lastQuizScore}%</span>
+                            <span>{mastery.totalQuizzesTaken} quizzes</span>
+                            <span>
+                              Last: {mastery.lastQuizScore ? Math.round(mastery.lastQuizScore) : 0}%
+                            </span>
                           </div>
                         </div>
                       </div>
-                    ))}
-            </div>
-          </section>
+                    )
+                )}
+              </div>
+            </section>
+          )}
 
           {/* AI Study Plan Insights */}
           {aiStudyPlan && (
@@ -1131,158 +1230,162 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
             </section>
           )}
 
-          {/* Study Tasks */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                <h2 className="text-lg lg:text-xl font-bold text-slate-900">
-                  {aiStudyPlan ? 'Your Personalized Tasks' : 'Study Tasks'}
-                </h2>
-              </div>
-              <button
-                onClick={handleGenerateStudyPlan}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={generatingPlan || loadingData}
-              >
-                {generatingPlan ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Generating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>{aiStudyPlan ? 'Regenerate' : 'Generate AI Plan'}</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {displayTasks.map(task => {
-                const TaskIcon = getTaskIcon(task.type);
-                return (
-                  <div
-                    key={task.id}
-                    className={`bg-white rounded-xl border-2 p-4 lg:p-5 transition-all ${task.completed ? 'border-green-200 bg-green-50/30' : 'border-slate-200 hover:border-blue-300 hover:shadow-md'}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Checkbox */}
-                      <button
-                        onClick={() =>
-                          task.completed
-                            ? null
-                            : handleCompleteTask(task.id, !task.requiresVerification)
-                        }
-                        disabled={task.completed}
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${task.completed ? 'bg-green-600 border-green-600 cursor-default' : 'border-slate-300 hover:border-blue-500'}`}
-                      >
-                        {task.completed && <CheckCircle2 className="w-5 h-5 text-white" />}
-                      </button>
-
-                      {/* Task Icon */}
-                      <div
-                        className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br ${getTaskColor(task.type)} flex items-center justify-center flex-shrink-0 shadow-sm`}
-                      >
-                        <TaskIcon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                      </div>
-
-                      {/* Task Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-2 mb-2">
-                          <h3
-                            className={`font-bold text-slate-900 text-sm lg:text-base ${task.completed ? 'line-through text-slate-500' : ''}`}
-                          >
-                            {task.title}
-                          </h3>
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs font-bold border ${getPriorityColor(task.priority)} flex-shrink-0`}
-                          >
-                            {task.priority}
-                          </span>
-                        </div>
-
-                        <p className="text-sm text-slate-600 mb-3">{task.description}</p>
-
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <span className="flex items-center gap-1 text-slate-600">
-                            <Clock className="w-3.5 h-3.5" />
-                            {task.estimatedTime} min
-                          </span>
-                          <span className="flex items-center gap-1 text-slate-600">
-                            <BookOpen className="w-3.5 h-3.5" />
-                            {task.topic}
-                          </span>
-                          {task.verified && (
-                            <span className="flex items-center gap-1 text-green-600 font-semibold">
-                              <CheckCheck className="w-3.5 h-3.5" />
-                              Verified
-                            </span>
-                          )}
-                          {taskTimers[task.id] > 0 && (
-                            <span className="flex items-center gap-1 text-blue-600 font-semibold">
-                              <Timer className="w-3.5 h-3.5" />
-                              {formatTime(taskTimers[task.id])}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Action Button */}
-                      {!task.completed && (
-                        <button
-                          onClick={() => handleStartTask(task)}
-                          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 flex-shrink-0"
-                        >
-                          <Play className="w-4 h-4" />
-                          <span className="hidden sm:inline">Start</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Study Tips */}
-          <section className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-5 lg:p-6">
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center flex-shrink-0">
-                <Lightbulb className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Smart Study Tip</h3>
-                <p className="text-sm text-slate-700 mb-3">
-                  {recommendation ? (
+          {/* Study Tasks - Only show if AI plan exists */}
+          {aiStudyPlan && (
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                  <h2 className="text-lg lg:text-xl font-bold text-slate-900">
+                    Your Personalized Tasks
+                  </h2>
+                </div>
+                <button
+                  onClick={() => handleGenerateStudyPlan(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={generatingPlan || loadingData}
+                >
+                  {generatingPlan ? (
                     <>
-                      {recommendation.recommendation
-                        .split(recommendation.focusTopic)
-                        .map((part, i) => (
-                          <React.Fragment key={i}>
-                            {i > 0 && <strong>{recommendation.focusTopic}</strong>}
-                            {part}
-                          </React.Fragment>
-                        ))}
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Regenerating...</span>
                     </>
                   ) : (
                     <>
-                      Based on your quiz performance, focus on <strong>World War II</strong> today.
-                      Spend 30-45 minutes reviewing key events and dates. Your mastery increased by
-                      12% after the last study session!
+                      <Sparkles className="w-4 h-4" />
+                      <span>Regenerate Plan</span>
                     </>
                   )}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-600" />
-                  <span className="text-xs font-semibold text-amber-800">
-                    AI-Generated Recommendation
-                  </span>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {displayTasks.map(task => {
+                  const TaskIcon = getTaskIcon(task.type);
+                  return (
+                    <div
+                      key={task.id}
+                      className={`bg-white rounded-xl border-2 p-4 lg:p-5 transition-all ${task.completed ? 'border-green-200 bg-green-50/30' : 'border-slate-200 hover:border-blue-300 hover:shadow-md'}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Checkbox */}
+                        <button
+                          onClick={() =>
+                            task.completed
+                              ? null
+                              : handleCompleteTask(task.id, !task.requiresVerification)
+                          }
+                          disabled={task.completed}
+                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${task.completed ? 'bg-green-600 border-green-600 cursor-default' : 'border-slate-300 hover:border-blue-500'}`}
+                        >
+                          {task.completed && <CheckCircle2 className="w-5 h-5 text-white" />}
+                        </button>
+
+                        {/* Task Icon */}
+                        <div
+                          className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br ${getTaskColor(task.type)} flex items-center justify-center flex-shrink-0 shadow-sm`}
+                        >
+                          <TaskIcon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+                        </div>
+
+                        {/* Task Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-2 mb-2">
+                            <h3
+                              className={`font-bold text-slate-900 text-sm lg:text-base ${task.completed ? 'line-through text-slate-500' : ''}`}
+                            >
+                              {task.title}
+                            </h3>
+                            <span
+                              className={`px-2 py-0.5 rounded text-xs font-bold border ${getPriorityColor(task.priority)} flex-shrink-0`}
+                            >
+                              {task.priority}
+                            </span>
+                          </div>
+
+                          <p className="text-sm text-slate-600 mb-3">{task.description}</p>
+
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <span className="flex items-center gap-1 text-slate-600">
+                              <Clock className="w-3.5 h-3.5" />
+                              {task.estimatedTime} min
+                            </span>
+                            <span className="flex items-center gap-1 text-slate-600">
+                              <BookOpen className="w-3.5 h-3.5" />
+                              {task.topic}
+                            </span>
+                            {task.verified && (
+                              <span className="flex items-center gap-1 text-green-600 font-semibold">
+                                <CheckCheck className="w-3.5 h-3.5" />
+                                Verified
+                              </span>
+                            )}
+                            {taskTimers[task.id] > 0 && (
+                              <span className="flex items-center gap-1 text-blue-600 font-semibold">
+                                <Timer className="w-3.5 h-3.5" />
+                                {formatTime(taskTimers[task.id])}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Button */}
+                        {!task.completed && (
+                          <button
+                            onClick={() => handleStartTask(task)}
+                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 flex-shrink-0"
+                          >
+                            <Play className="w-4 h-4" />
+                            <span className="hidden sm:inline">Start</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Study Tips - Only show if AI plan exists */}
+          {aiStudyPlan && (
+            <section className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-5 lg:p-6">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center flex-shrink-0">
+                  <Lightbulb className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Smart Study Tip</h3>
+                  <p className="text-sm text-slate-700 mb-3">
+                    {recommendation ? (
+                      <>
+                        {recommendation.recommendation
+                          .split(recommendation.focusTopic)
+                          .map((part, i) => (
+                            <React.Fragment key={i}>
+                              {i > 0 && <strong>{recommendation.focusTopic}</strong>}
+                              {part}
+                            </React.Fragment>
+                          ))}
+                      </>
+                    ) : (
+                      <>
+                        Based on your quiz performance, focus on <strong>World War II</strong>{' '}
+                        today. Spend 30-45 minutes reviewing key events and dates. Your mastery
+                        increased by 12% after the last study session!
+                      </>
+                    )}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <span className="text-xs font-semibold text-amber-800">
+                      AI-Generated Recommendation
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
         </div>
       </div>
 

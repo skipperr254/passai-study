@@ -9,9 +9,9 @@ const openai = new OpenAI({
 
 export interface AIQuestionSchema {
   question: string;
-  type: 'multiple-choice' | 'true-false' | 'short-answer' | 'essay';
+  type: 'multiple-choice' | 'true-false';
   options?: string[];
-  correctAnswer: string | string[];
+  correctAnswer: string;
   explanation: string;
   difficulty: 'easy' | 'medium' | 'hard';
   tags: string[];
@@ -90,6 +90,8 @@ CRITICAL REQUIREMENTS:
 2. The response format MUST be: {"questions": [... array of question objects ...]}
 3. NEVER return a single question object - ALWAYS return an array even if generating just one question
 4. No additional text, explanations, or markdown formatting outside the JSON
+5. ONLY generate "multiple-choice" and "true-false" questions
+6. NEVER add letter prefixes (A., B., C., D.) to options - provide plain text only
 
 Generate questions that:
 1. Test understanding, not just memorization
@@ -98,11 +100,15 @@ Generate questions that:
 4. Match the requested difficulty level
 5. Cover key concepts from the material
 
-Question types:
-- multiple-choice: 4 options (A, B, C, D) with one correct answer
-- true-false: Statement with boolean answer
-- short-answer: Open-ended question requiring 1-2 sentence answer
-- essay: Complex question requiring detailed explanation
+Question types ALLOWED:
+- multiple-choice: Exactly 4 plain text options with one correct answer (NO "A. ", "B. " prefixes)
+- true-false: Statement with exactly 2 options: ["True", "False"]
+
+Question types NOT ALLOWED:
+- short-answer
+- essay
+- fill-in-the-blank
+- matching
 
 Difficulty levels:
 - easy: Basic recall and comprehension
@@ -123,9 +129,9 @@ Response format - you MUST use this EXACT structure:
   "questions": [
     {
       "question": "The question text",
-      "type": "multiple-choice" | "true-false" | "short-answer" | "essay",
-      "options": ["Option A", "Option B", "Option C", "Option D"], // Only for multiple-choice
-      "correctAnswer": "The correct answer(s)", // String for most types, array for multiple correct answers
+      "type": "multiple-choice" | "true-false",
+      "options": ["First option", "Second option", "Third option", "Fourth option"], // ONLY for multiple-choice, 4 options, NO "A. ", "B. " prefixes
+      "correctAnswer": "The correct answer text", // Must match one of the options exactly
       "explanation": "Why this answer is correct and what concept it tests",
       "difficulty": "easy" | "medium" | "hard",
       "tags": ["concept1", "concept2"], // Key topics/concepts covered
@@ -135,11 +141,16 @@ Response format - you MUST use this EXACT structure:
   ]
 }
 
-Question type distribution (aim for variety):
-- 60% multiple-choice
-- 20% true-false
-- 15% short-answer
-- 5% essay (only for exam mode)
+CRITICAL INSTRUCTIONS:
+1. ONLY generate "multiple-choice" and "true-false" questions
+2. For multiple-choice: provide exactly 4 options WITHOUT any prefixes (no "A. ", "B. ", "C. ", "D. ")
+3. For true-false: provide exactly 2 options: ["True", "False"]
+4. The correctAnswer MUST match one of the options exactly (word for word)
+5. Options should be plain text without any numbering or lettering
+
+Question type distribution:
+- 70% multiple-choice (4 options each)
+- 30% true-false (2 options each)
 
 CRITICAL: Your response MUST be a JSON object with a "questions" array containing ${questionCount} question objects. DO NOT return anything else.`;
 
@@ -251,13 +262,20 @@ function validateQuestion(question: unknown, index: number): AIQuestionSchema {
     throw new Error(`Question ${index + 1}: Missing or invalid 'question' field`);
   }
 
-  // Validate type
-  const validTypes = ['multiple-choice', 'true-false', 'short-answer', 'essay'];
+  // Validate type - ONLY allow multiple-choice and true-false
+  const validTypes = ['multiple-choice', 'true-false'];
   if (!q.type || !validTypes.includes(q.type as string)) {
     q.type = 'multiple-choice'; // Default to multiple-choice
   }
 
-  // Validate multiple-choice options
+  // Reject short-answer and essay types
+  if (q.type === 'short-answer' || q.type === 'essay') {
+    throw new Error(
+      `Question ${index + 1}: Only multiple-choice and true-false questions are allowed`
+    );
+  }
+
+  // Validate and clean options
   if (q.type === 'multiple-choice') {
     if (!Array.isArray(q.options) || q.options.length < 2) {
       throw new Error(
@@ -266,10 +284,33 @@ function validateQuestion(question: unknown, index: number): AIQuestionSchema {
     }
   }
 
+  // Validate true-false options
+  if (q.type === 'true-false') {
+    if (!Array.isArray(q.options)) {
+      q.options = ['True', 'False'];
+    }
+  }
+
+  // Clean options - remove any "A. ", "B. ", "C. ", "D. " prefixes or numbering
+  const cleanOptions = (options: unknown[]): string[] => {
+    return options.map((opt: unknown) => {
+      let cleaned = String(opt).trim();
+      // Remove patterns like "A. ", "B. ", "1. ", "2) ", etc.
+      cleaned = cleaned.replace(/^[A-D][.)]\s*/i, '');
+      cleaned = cleaned.replace(/^[1-4][.)]\s*/, '');
+      return cleaned;
+    });
+  };
+
   // Validate correct answer
   if (!q.correctAnswer) {
     throw new Error(`Question ${index + 1}: Missing 'correctAnswer' field`);
   }
+
+  // Clean correct answer as well
+  let cleanedCorrectAnswer = String(q.correctAnswer).trim();
+  cleanedCorrectAnswer = cleanedCorrectAnswer.replace(/^[A-D][.)]\s*/i, '');
+  cleanedCorrectAnswer = cleanedCorrectAnswer.replace(/^[1-4][.)]\s*/, '');
 
   // Validate difficulty
   const validDifficulties = ['easy', 'medium', 'hard'];
@@ -292,13 +333,13 @@ function validateQuestion(question: unknown, index: number): AIQuestionSchema {
     q.tags = [];
   }
 
+  const cleanedOptions = Array.isArray(q.options) ? cleanOptions(q.options) : undefined;
+
   return {
     question: (q.question as string).trim(),
-    type: q.type as AIQuestionSchema['type'],
-    options: Array.isArray(q.options)
-      ? q.options.map((opt: unknown) => String(opt).trim())
-      : undefined,
-    correctAnswer: q.correctAnswer as string | string[],
+    type: q.type as 'multiple-choice' | 'true-false',
+    options: cleanedOptions,
+    correctAnswer: cleanedCorrectAnswer,
     explanation: (q.explanation as string).trim(),
     difficulty: q.difficulty as AIQuestionSchema['difficulty'],
     tags: q.tags as string[],

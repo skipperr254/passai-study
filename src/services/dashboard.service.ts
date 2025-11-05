@@ -357,7 +357,7 @@ export async function getRecentActivity(userId: string): Promise<RecentActivity[
     // Get recent material uploads
     const { data: materials, error: materialsError } = await supabase
       .from('materials')
-      .select('id, title, created_at')
+      .select('id, name, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(3);
@@ -368,7 +368,7 @@ export async function getRecentActivity(userId: string): Promise<RecentActivity[
           id: material.id,
           type: 'material_uploaded',
           title: 'Material Uploaded',
-          description: material.title,
+          description: material.name,
           timestamp: material.created_at,
           icon: 'FileText',
           color: 'text-blue-600',

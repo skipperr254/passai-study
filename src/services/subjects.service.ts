@@ -160,7 +160,7 @@ export async function getSubjectStats(subjectId: string, userId: string) {
   // Get total study time (from study sessions)
   const { data: studySessions, error: sessionsError } = await supabase
     .from('study_sessions')
-    .select('duration_minutes')
+    .select('duration')
     .eq('subject_id', subjectId)
     .eq('user_id', userId);
 
@@ -169,7 +169,7 @@ export async function getSubjectStats(subjectId: string, userId: string) {
   }
 
   const totalMinutes =
-    studySessions?.reduce((sum, session) => sum + (session.duration_minutes || 0), 0) || 0;
+    studySessions?.reduce((sum, session) => sum + (session.duration || 0), 0) || 0;
   const hoursStudied = Math.round((totalMinutes / 60) * 10) / 10; // Round to 1 decimal
 
   return {
