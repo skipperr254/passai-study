@@ -13,6 +13,7 @@ import {
 import { useSubjects } from '@/hooks/useSubjects';
 import { useDashboard } from '@/hooks/useDashboard';
 import type { Subject as SubjectType } from '@/types/subject';
+import { useNavigate } from 'react-router-dom';
 
 type SubjectWithStats = SubjectType & {
   progress?: number;
@@ -68,6 +69,7 @@ const mockQuizData: QuizResult[] = [
 ];
 
 export const DashboardPage = (props: DashboardPageProps) => {
+  const navigate = useNavigate();
   const { subjects: dbSubjects, loading: subjectsLoading, error: subjectsError } = useSubjects();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | undefined>(undefined);
   const { progressData, loading: dashboardLoading } = useDashboard(selectedSubjectId);
@@ -192,7 +194,7 @@ export const DashboardPage = (props: DashboardPageProps) => {
                 Please create a subject to see your statistics and track your learning progress.
               </p>
               <button
-                onClick={() => (window.location.href = '/app/subjects')}
+                onClick={() => navigate('/app/subjects')}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all inline-flex items-center gap-2"
               >
                 <Book className="w-5 h-5" />
