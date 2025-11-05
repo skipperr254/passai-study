@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Zap,
   ArrowLeft,
+  X,
   FileText,
   ChevronDown,
   Eye,
@@ -26,9 +27,11 @@ import { useQuizzes } from '@/hooks/useQuizzes';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useMaterials } from '@/hooks/useMaterials';
 import { useAuth } from '@/hooks/useAuth';
+import { getQuizAttempts } from '@/services/quiz-attempt.service';
 import toast from 'react-hot-toast';
 import type { Quiz } from '@/types/quiz';
 import type { Material } from '@/types/material';
+import type { QuizAttempt } from '@/types/quiz';
 type QuizDetailPageProps = {
   quizId: string;
   onBack?: () => void;
@@ -42,8 +45,11 @@ export const QuizDetailPage = ({ quizId, onBack, onStartQuiz }: QuizDetailPagePr
   const { materials } = useMaterials();
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAttempts, setLoadingAttempts] = useState(true);
   const [showAttemptDetails, setShowAttemptDetails] = useState(false);
+  const [selectedAttempt, setSelectedAttempt] = useState<QuizAttempt | null>(null);
   const [isQuizActive, setIsQuizActive] = useState(false);
 
   // Fetch quiz data on mount
@@ -84,6 +90,44 @@ export const QuizDetailPage = ({ quizId, onBack, onStartQuiz }: QuizDetailPagePr
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quizId]);
+
+  // Fetch quiz attempts
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchAttempts = async () => {
+      if (!user || !quizId) return;
+
+      setLoadingAttempts(true);
+      try {
+        const attemptsData = await getQuizAttempts(quizId, user.id);
+        if (mounted) {
+          setAttempts(attemptsData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch attempts:', error);
+      } finally {
+        if (mounted) {
+          setLoadingAttempts(false);
+        }
+      }
+    };
+
+    fetchAttempts();
+
+    return () => {
+      mounted = false;
+    };
+  }, [quizId, user]);
+
+  // Refresh attempts when returning from quiz
+  const handleQuizExit = () => {
+    setIsQuizActive(false);
+    // Refetch attempts
+    if (user && quizId) {
+      getQuizAttempts(quizId, user.id).then(setAttempts);
+    }
+  };
 
   // Show loading state
   if (loading) {
@@ -133,15 +177,19 @@ export const QuizDetailPage = ({ quizId, onBack, onStartQuiz }: QuizDetailPagePr
         subject={subjectName}
         subjectColor={subjectColor}
         totalQuestions={quiz.questionCount}
-        onExit={() => setIsQuizActive(false)}
+        onExit={handleQuizExit}
       />
     );
   }
 
-  // TODO: Fetch quiz attempts from database (Phase 4.4)
-  const attempts: never[] = []; // Will be populated with real attempts later
-  const bestScore = 0; // TODO: Calculate from attempts
-  const averageScore = 0; // TODO: Calculate from attempts
+  // Calculate stats from attempts
+  const completedAttempts = attempts.filter(a => a.status === 'completed');
+  const bestScore =
+    completedAttempts.length > 0 ? Math.max(...completedAttempts.map(a => a.percentage)) : 0;
+  const averageScore =
+    completedAttempts.length > 0
+      ? completedAttempts.reduce((sum, a) => sum + a.percentage, 0) / completedAttempts.length
+      : 0;
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
@@ -279,23 +327,98 @@ export const QuizDetailPage = ({ quizId, onBack, onStartQuiz }: QuizDetailPagePr
                 </div>
               </section>
 
-              {/* Attempts History - Will be implemented in Phase 4.4 */}
+              {/* Attempts History */}
               <section className="bg-white rounded-xl lg:rounded-2xl border border-slate-200 p-5 lg:p-6 shadow-sm">
                 <h2 className="text-lg lg:text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-blue-600" />
                   Attempt History
                   <span className="ml-auto text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg">
-                    0 total
+                    {attempts.length} total
                   </span>
                 </h2>
 
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <FileQuestion className="w-8 h-8 text-slate-400" />
+                {loadingAttempts ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-2" />
+                    <p className="text-sm text-slate-600">Loading attempts...</p>
                   </div>
-                  <p className="text-slate-600 font-medium">No attempts yet</p>
-                  <p className="text-sm text-slate-500 mt-1">Start the quiz to see your progress</p>
-                </div>
+                ) : attempts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <FileQuestion className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <p className="text-slate-600 font-medium">No attempts yet</p>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Start the quiz to see your progress
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {attempts.map((attempt, index) => {
+                      const isCompleted = attempt.status === 'completed';
+                      const isAbandoned = attempt.status === 'abandoned';
+
+                      return (
+                        <div
+                          key={attempt.id}
+                          onClick={() => {
+                            setSelectedAttempt(attempt);
+                            setShowAttemptDetails(true);
+                          }}
+                          className="p-4 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 cursor-pointer transition-all group"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-slate-700">
+                                Attempt #{attempts.length - index}
+                              </span>
+                              {isCompleted && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                              {isAbandoned && <XCircle className="w-4 h-4 text-amber-600" />}
+                              {!isCompleted && !isAbandoned && (
+                                <Clock className="w-4 h-4 text-blue-600" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-lg font-bold ${
+                                  attempt.percentage >= 70
+                                    ? 'text-emerald-600'
+                                    : attempt.percentage >= 50
+                                      ? 'text-amber-600'
+                                      : 'text-red-600'
+                                }`}
+                              >
+                                {attempt.percentage.toFixed(0)}%
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-slate-600">
+                            <div className="flex items-center gap-1">
+                              <Trophy className="w-3 h-3" />
+                              <span>{attempt.score} points</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>
+                                {Math.floor(attempt.timeSpent / 60)}m {attempt.timeSpent % 60}s
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              <span>{new Date(attempt.startedAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          {attempt.status === 'in-progress' && (
+                            <div className="mt-2 text-xs text-blue-600 font-semibold">
+                              In Progress
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </section>
             </div>
 
@@ -399,7 +522,124 @@ export const QuizDetailPage = ({ quizId, onBack, onStartQuiz }: QuizDetailPagePr
         </div>
       </div>
 
-      {/* TODO: Attempt Detail Modal will be implemented in Phase 4.4 when quiz_attempts table is integrated */}
+      {/* Attempt Detail Modal */}
+      {showAttemptDetails && selectedAttempt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4"
+          onClick={() => setShowAttemptDetails(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-in zoom-in-95 duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-slate-200 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-t-2xl">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-bold text-slate-900">Attempt Details</h3>
+                <button
+                  onClick={() => setShowAttemptDetails(false)}
+                  className="w-8 h-8 rounded-lg bg-white/50 hover:bg-white flex items-center justify-center transition-colors"
+                >
+                  <X className="w-5 h-5 text-slate-600" />
+                </button>
+              </div>
+              <p className="text-sm text-slate-600">
+                {new Date(selectedAttempt.startedAt).toLocaleString()}
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-5 space-y-4">
+              {/* Score */}
+              <div className="text-center py-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
+                <div
+                  className={`text-5xl font-bold mb-2 ${
+                    selectedAttempt.percentage >= 70
+                      ? 'text-emerald-600'
+                      : selectedAttempt.percentage >= 50
+                        ? 'text-amber-600'
+                        : 'text-red-600'
+                  }`}
+                >
+                  {selectedAttempt.percentage.toFixed(0)}%
+                </div>
+                <p className="text-sm font-semibold text-slate-600">
+                  {selectedAttempt.score} / {quiz.totalPoints || quiz.questionCount * 10} points
+                </p>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="w-4 h-4 text-slate-600" />
+                    <span className="text-xs font-semibold text-slate-600">Time Spent</span>
+                  </div>
+                  <p className="text-lg font-bold text-slate-900">
+                    {Math.floor(selectedAttempt.timeSpent / 60)}m {selectedAttempt.timeSpent % 60}s
+                  </p>
+                </div>
+
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Target className="w-4 h-4 text-slate-600" />
+                    <span className="text-xs font-semibold text-slate-600">Status</span>
+                  </div>
+                  <p className="text-lg font-bold text-slate-900 capitalize">
+                    {selectedAttempt.status}
+                  </p>
+                </div>
+              </div>
+
+              {/* Mood Data (if available) */}
+              {selectedAttempt.mood_at_midpoint && (
+                <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm font-semibold text-slate-900">Mid-Quiz Check-In</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div>
+                      <p className="text-xs text-slate-600">Mood</p>
+                      <p className="font-bold text-slate-900 capitalize">
+                        {selectedAttempt.mood_at_midpoint}
+                      </p>
+                    </div>
+                    {selectedAttempt.energy_level && (
+                      <div>
+                        <p className="text-xs text-slate-600">Energy</p>
+                        <p className="font-bold text-slate-900">
+                          {selectedAttempt.energy_level}/10
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Completion Info */}
+              {selectedAttempt.completedAt && (
+                <div className="flex items-center justify-between text-sm py-3 border-t border-slate-200">
+                  <span className="text-slate-600">Completed</span>
+                  <span className="font-semibold text-slate-900">
+                    {new Date(selectedAttempt.completedAt).toLocaleString()}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
+              <button
+                onClick={() => setShowAttemptDetails(false)}
+                className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:shadow-lg active:scale-95 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

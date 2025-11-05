@@ -9,7 +9,7 @@ import { DashboardPage } from '@/components/dashboard/DashboardPage';
 import { SubjectsPage } from '@/components/subject/SubjectsPage';
 import { QuizzesPage } from '@/components/quiz/QuizzesPage';
 import { QuizDetailPageWrapper } from '@/routes/wrappers/QuizDetailPageWrapper';
-import { MaterialsPage } from '@/components/generated/MaterialsPage';
+import { MaterialsPage } from '@/components/material/MaterialsPage';
 import { StudyPlanPage } from '@/components/common/StudyPlanPage';
 import { ProfilePageWrapper } from '@/routes/wrappers/ProfilePageWrapper';
 import { SettingsPageWrapper } from '@/routes/wrappers/SettingsPageWrapper';

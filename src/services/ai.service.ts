@@ -112,6 +112,8 @@ RESPOND WITH ONLY THE JSON ARRAY. NO OTHER TEXT.`;
 
     const responseText = completion.choices[0]?.message?.content;
 
+    console.log('Response text: ', responseText);
+
     if (!responseText) {
       throw new Error('No response from OpenAI API');
     }
@@ -120,6 +122,7 @@ RESPOND WITH ONLY THE JSON ARRAY. NO OTHER TEXT.`;
     let parsed: unknown;
     try {
       parsed = JSON.parse(responseText);
+      console.log('Parsed: ', parsed);
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', responseText);
       throw new Error('Invalid JSON response from OpenAI');

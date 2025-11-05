@@ -19,7 +19,7 @@ import {
   Lightbulb,
   Loader2,
 } from 'lucide-react';
-import { MoodCheckModal } from '../generated/MoodCheckModal';
+import { MoodCheckModal } from '../common';
 import { QuizResultsPage } from './QuizResultsPage';
 import { useAuth } from '@/hooks/useAuth';
 import { getQuizById } from '@/services/quiz.service';
@@ -29,6 +29,7 @@ import {
   submitAttempt,
   updateAttemptProgress,
   abandonAttempt,
+  updateMoodData,
 } from '@/services/quiz-attempt.service';
 import toast from 'react-hot-toast';
 import type { Question } from '@/types/question';
@@ -67,13 +68,14 @@ export const QuizSession = (props: QuizSessionProps) => {
   const [results, setResults] = useState<QuestionResult[]>([]);
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [showMoodCheck, setShowMoodCheck] = useState(false);
+  const [moodData, setMoodData] = useState<{ mood: string; energyLevel: number } | null>(null);
   const [isQuizComplete, setIsQuizComplete] = useState(false);
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
-  const isMidpoint =
-    currentQuestionIndex === Math.floor(questions.length / 2) &&
-    !showMoodCheck &&
-    results.length === Math.floor(questions.length / 2);
+
+  // Check if we've reached the midpoint (50% of questions answered)
+  const midpointIndex = Math.floor(questions.length / 2);
+  const shouldShowMoodCheck = hasSubmitted && currentQuestionIndex === midpointIndex && !moodData;
 
   // Initialize quiz - fetch questions and start attempt
   useEffect(() => {
@@ -163,12 +165,12 @@ export const QuizSession = (props: QuizSessionProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasSubmitted, currentQuestionIndex, isQuizComplete, loading]);
 
-  // Check for midpoint
+  // Check for midpoint - show mood check after answering the midpoint question
   useEffect(() => {
-    if (isMidpoint) {
+    if (shouldShowMoodCheck) {
       setShowMoodCheck(true);
     }
-  }, [isMidpoint]);
+  }, [shouldShowMoodCheck]);
 
   const handleTimeUp = async () => {
     if (!attempt || !user) return;
@@ -197,11 +199,25 @@ export const QuizSession = (props: QuizSessionProps) => {
     const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
     const correctAnswer = currentQuestion.correctAnswer;
     const userAnswerStr = String(selectedAnswer);
-    const correctAnswerStr = String(correctAnswer);
+    const correctAnswerStr =
+      typeof correctAnswer === 'string'
+        ? correctAnswer
+        : Array.isArray(correctAnswer)
+          ? correctAnswer.join(', ')
+          : JSON.stringify(correctAnswer);
 
-    // Check if correct (case-insensitive comparison)
-    const isCorrect = userAnswerStr.trim().toLowerCase() === correctAnswerStr.trim().toLowerCase();
-    const pointsEarned = isCorrect ? 1 : 0; // TODO: Use question.points when available
+    // For essay and short-answer, consider them "correct" by default (manual grading needed)
+    let isCorrect = false;
+    if (currentQuestion.type === 'essay' || currentQuestion.type === 'short-answer') {
+      // Accept any non-empty answer for now
+      isCorrect = userAnswerStr.trim().length > 0;
+    } else {
+      // Check if correct (case-insensitive comparison for multiple choice/true-false)
+      isCorrect = userAnswerStr.trim().toLowerCase() === correctAnswerStr.trim().toLowerCase();
+    }
+
+    // Use actual points from question
+    const pointsEarned = isCorrect ? currentQuestion.points || 1 : 0;
 
     const result: QuestionResult = {
       questionId: currentQuestion.id,
@@ -402,45 +418,80 @@ export const QuizSession = (props: QuizSessionProps) => {
 
           {/* Answer Options */}
           <div className="space-y-3 mb-6">
-            {currentQuestion.options?.map((option, idx) => {
-              const isSelected = selectedAnswer === option;
-              const isCorrect = option === currentQuestion.correctAnswer;
-              const showResult = hasSubmitted;
-              let optionClass =
-                'bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-900';
-              if (showResult) {
-                if (isCorrect) {
-                  optionClass = 'bg-emerald-50 border-2 border-emerald-500 text-emerald-900';
-                } else if (isSelected && !isCorrect) {
-                  optionClass = 'bg-red-50 border-2 border-red-500 text-red-900';
-                } else {
-                  optionClass = 'bg-slate-50 border-2 border-slate-200 text-slate-600';
+            {/* Multiple Choice / True-False Questions */}
+            {currentQuestion.options && currentQuestion.options.length > 0 ? (
+              currentQuestion.options.map((option, idx) => {
+                const isSelected = selectedAnswer === option;
+                const isCorrect = option === currentQuestion.correctAnswer;
+                const showResult = hasSubmitted;
+                let optionClass =
+                  'bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-900';
+                if (showResult) {
+                  if (isCorrect) {
+                    optionClass = 'bg-emerald-50 border-2 border-emerald-500 text-emerald-900';
+                  } else if (isSelected && !isCorrect) {
+                    optionClass = 'bg-red-50 border-2 border-red-500 text-red-900';
+                  } else {
+                    optionClass = 'bg-slate-50 border-2 border-slate-200 text-slate-600';
+                  }
+                } else if (isSelected) {
+                  optionClass = 'bg-blue-50 border-2 border-blue-500 text-blue-900';
                 }
-              } else if (isSelected) {
-                optionClass = 'bg-blue-50 border-2 border-blue-500 text-blue-900';
-              }
-              return (
-                <button
-                  key={idx}
-                  onClick={() => !hasSubmitted && setSelectedAnswer(option)}
-                  disabled={hasSubmitted}
-                  className={`w-full text-left px-4 lg:px-5 py-3 lg:py-4 rounded-xl font-semibold transition-all active:scale-[0.98] ${optionClass} ${hasSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-white/50 flex items-center justify-center text-sm font-bold">
-                      {String.fromCharCode(65 + idx)}
-                    </span>
-                    <span className="flex-1">{option}</span>
-                    {showResult && isCorrect && (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                    )}
-                    {showResult && isSelected && !isCorrect && (
-                      <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => !hasSubmitted && setSelectedAnswer(option)}
+                    disabled={hasSubmitted}
+                    className={`w-full text-left px-4 lg:px-5 py-3 lg:py-4 rounded-xl font-semibold transition-all active:scale-[0.98] ${optionClass} ${hasSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-white/50 flex items-center justify-center text-sm font-bold">
+                        {String.fromCharCode(65 + idx)}
+                      </span>
+                      <span className="flex-1">{option}</span>
+                      {showResult && isCorrect && (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                      )}
+                      {showResult && isSelected && !isCorrect && (
+                        <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                      )}
+                    </div>
+                  </button>
+                );
+              })
+            ) : (
+              /* Short Answer / Essay Questions */
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  {currentQuestion.type === 'essay' ? 'Your Answer (Essay):' : 'Your Answer:'}
+                </label>
+                {currentQuestion.type === 'essay' ? (
+                  <textarea
+                    value={selectedAnswer}
+                    onChange={e => !hasSubmitted && setSelectedAnswer(e.target.value)}
+                    disabled={hasSubmitted}
+                    rows={8}
+                    placeholder="Type your answer here..."
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-600 resize-none"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={selectedAnswer}
+                    onChange={e => !hasSubmitted && setSelectedAnswer(e.target.value)}
+                    disabled={hasSubmitted}
+                    placeholder="Type your answer here..."
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-600"
+                  />
+                )}
+                {hasSubmitted && (
+                  <p className="text-xs text-slate-600 mt-2">
+                    <span className="font-semibold">Note:</span> Your answer has been recorded and
+                    will be reviewed.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Feedback Section (After Submission) */}
@@ -461,15 +512,48 @@ export const QuizSession = (props: QuizSessionProps) => {
                     {results[results.length - 1]?.isCorrect
                       ? '✓ Correct!'
                       : results[results.length - 1]?.wasAnswered
-                        ? '✗ Incorrect'
+                        ? currentQuestion.type === 'essay' ||
+                          currentQuestion.type === 'short-answer'
+                          ? '✓ Answer Recorded'
+                          : '✗ Incorrect'
                         : "⏱ Time's Up!"}
                   </h3>
-                  {!results[results.length - 1]?.isCorrect && (
-                    <p className="text-sm font-semibold text-slate-700 mb-2">
-                      Correct answer:{' '}
-                      <span className="text-emerald-700">{currentQuestion.correctAnswer}</span>
-                    </p>
+                  {!results[results.length - 1]?.isCorrect &&
+                    currentQuestion.type !== 'essay' &&
+                    currentQuestion.type !== 'short-answer' && (
+                      <p className="text-sm font-semibold text-slate-700 mb-2">
+                        Correct answer:{' '}
+                        <span className="text-emerald-700">
+                          {typeof currentQuestion.correctAnswer === 'string'
+                            ? currentQuestion.correctAnswer
+                            : Array.isArray(currentQuestion.correctAnswer)
+                              ? currentQuestion.correctAnswer.join(', ')
+                              : JSON.stringify(currentQuestion.correctAnswer)}
+                        </span>
+                      </p>
+                    )}
+                  {(currentQuestion.type === 'essay' ||
+                    currentQuestion.type === 'short-answer') && (
+                    <div className="mb-3 p-3 bg-white/50 rounded-lg">
+                      <p className="text-xs font-semibold text-slate-600 mb-1">Your Answer:</p>
+                      <p className="text-sm text-slate-800">
+                        {selectedAnswer || '(No answer provided)'}
+                      </p>
+                    </div>
                   )}
+                  {(currentQuestion.type === 'essay' || currentQuestion.type === 'short-answer') &&
+                    currentQuestion.correctAnswer && (
+                      <div className="mb-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <p className="text-xs font-semibold text-emerald-700 mb-1">
+                          Expected Answer:
+                        </p>
+                        <p className="text-sm text-slate-800">
+                          {typeof currentQuestion.correctAnswer === 'string'
+                            ? currentQuestion.correctAnswer
+                            : JSON.stringify(currentQuestion.correctAnswer)}
+                        </p>
+                      </div>
+                    )}
                   <p className="text-sm text-slate-700 leading-relaxed">
                     <span className="font-semibold flex items-center gap-1.5 mb-1">
                       <Lightbulb className="w-4 h-4" />
@@ -586,10 +670,31 @@ export const QuizSession = (props: QuizSessionProps) => {
       {/* Mood Check Modal */}
       {showMoodCheck && (
         <MoodCheckModal
-          onComplete={() => setShowMoodCheck(false)}
-          currentScore={Math.round(
-            (results.filter(r => r.isCorrect).length / results.length) * 100
-          )}
+          onComplete={async (mood, energyLevel) => {
+            setMoodData({ mood, energyLevel });
+            setShowMoodCheck(false);
+
+            // Save mood data to database
+            if (attempt && user) {
+              const success = await updateMoodData(
+                attempt.id,
+                user.id,
+                mood as 'confident' | 'okay' | 'struggling' | 'confused',
+                energyLevel
+              );
+
+              if (success) {
+                toast.success('Mood data saved!');
+              } else {
+                toast.error('Failed to save mood data');
+              }
+            }
+          }}
+          currentScore={
+            results.length > 0
+              ? Math.round((results.filter(r => r.isCorrect).length / results.length) * 100)
+              : 0
+          }
         />
       )}
     </div>

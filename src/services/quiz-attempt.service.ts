@@ -13,6 +13,8 @@ interface QuizAttemptDbRow {
   score: number;
   percentage: number;
   time_spent: number;
+  mood_at_midpoint?: string | null;
+  energy_level?: number | null;
   created_at: string;
 }
 
@@ -41,6 +43,13 @@ const mapAttemptFromDb = (
   score: row.score,
   percentage: row.percentage,
   timeSpent: row.time_spent,
+  mood_at_midpoint: row.mood_at_midpoint as
+    | 'confident'
+    | 'okay'
+    | 'struggling'
+    | 'confused'
+    | undefined,
+  energy_level: row.energy_level || undefined,
   responses,
 });
 
@@ -170,7 +179,7 @@ export const saveResponse = async (
       .select('id')
       .eq('attempt_id', attemptId)
       .eq('question_id', questionId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single() to avoid 406 error
 
     if (existing) {
       // Update existing response
@@ -301,6 +310,37 @@ export const updateAttemptProgress = async (
     return true;
   } catch (error) {
     console.error('Error updating attempt progress:', error);
+    return false;
+  }
+};
+
+/**
+ * Update mood data for a quiz attempt (captured at midpoint)
+ */
+export const updateMoodData = async (
+  attemptId: string,
+  userId: string,
+  mood: 'confident' | 'okay' | 'struggling' | 'confused',
+  energyLevel: number
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('quiz_attempts')
+      .update({
+        mood_at_midpoint: mood,
+        energy_level: energyLevel,
+      })
+      .eq('id', attemptId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error updating mood data:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error updating mood data:', error);
     return false;
   }
 };

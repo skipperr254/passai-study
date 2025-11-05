@@ -23,7 +23,7 @@ import {
   Sun,
   Loader2,
 } from 'lucide-react';
-import { GardenProgress } from '../generated/GardenProgress';
+import { GardenProgress } from '../dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubjects } from '@/hooks/useSubjects';
 import { getQuizResults } from '@/services/quiz-attempt.service';

@@ -34,8 +34,27 @@ import {
   Lightbulb,
   Flag,
 } from 'lucide-react';
-import { VerificationQuiz } from '../generated/VerificationQuiz';
-
+import { VerificationQuiz } from '@/components/quiz';
+import { useAuth } from '@/components/common/AuthContext';
+import {
+  getTodaysTasks,
+  startTask,
+  completeTask as completeTaskService,
+  updateTaskTime,
+} from '../../services/study-task.service';
+import {
+  getTopicMasteryBySubject,
+  getWeakTopics,
+  calculateSubjectMastery,
+} from '../../services/topic.service';
+import {
+  regenerateStudyPlan,
+  getStudyRecommendations,
+} from '../../services/task-generator.service';
+import type {
+  StudyTask as RealStudyTask,
+  TopicMastery as RealTopicMastery,
+} from '../../types/learning';
 type Subject = {
   id: string;
   name: string;
@@ -265,6 +284,7 @@ type StudyPlanPageProps = {
   preSelectedSubjectId?: string;
 };
 export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
+  const { user } = useAuth();
   const [selectedSubject, setSelectedSubject] = useState<Subject>(
     preSelectedSubjectId
       ? mockSubjects.find(s => s.id === preSelectedSubjectId) || mockSubjects[0]
@@ -279,16 +299,82 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
   const [showAnswer, setShowAnswer] = useState(false);
   const [flashcards, setFlashcards] = useState<FlashCard[]>(mockFlashcards);
 
+  // Real data states
+  const [realTasks, setRealTasks] = useState<RealStudyTask[]>([]);
+  const [topicMastery, setTopicMastery] = useState<RealTopicMastery[]>([]);
+  const [subjectMastery, setSubjectMastery] = useState<number>(0);
+  const [loadingData, setLoadingData] = useState(true);
+  const [recommendation, setRecommendation] = useState<{
+    focusTopic: string;
+    recommendation: string;
+    estimatedTime: number;
+  } | null>(null);
+
   // Timer state - each task has its own timer
   const [taskTimers, setTaskTimers] = useState<Record<string, number>>({});
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const completedTasks = tasks.filter(t => t.completed).length;
-  const totalTasks = tasks.length;
-  const progressPercentage = (completedTasks / totalTasks) * 100;
-  const estimatedTimeRemaining = tasks
+
+  // Use real tasks if available, fallback to mock
+  const displayTasks =
+    realTasks.length > 0
+      ? realTasks.map(rt => ({
+          id: rt.id,
+          title: rt.title,
+          type: rt.type,
+          topic: rt.topic?.name || 'General',
+          estimatedTime: rt.estimatedTime,
+          priority: rt.priority,
+          completed: rt.status === 'completed',
+          verified: rt.verificationStatus === 'passed',
+          description: rt.description,
+          requiresVerification: rt.requiresVerification,
+        }))
+      : tasks;
+
+  const completedTasks = displayTasks.filter(t => t.completed).length;
+  const totalTasks = displayTasks.length;
+  const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+  const estimatedTimeRemaining = displayTasks
     .filter(t => !t.completed)
     .reduce((acc, t) => acc + t.estimatedTime, 0);
+
+  // Fetch real data
+  useEffect(() => {
+    const fetchStudyData = async () => {
+      if (!user || !selectedSubject.id) return;
+
+      try {
+        setLoadingData(true);
+
+        // Fetch tasks for selected subject
+        const tasksData = await getTodaysTasks(user.id, selectedSubject.id);
+        setRealTasks(tasksData);
+
+        // Fetch topic mastery
+        const masteryData = await getTopicMasteryBySubject(user.id, selectedSubject.id);
+        setTopicMastery(masteryData);
+
+        // Calculate overall subject mastery
+        const overallMastery = await calculateSubjectMastery(user.id, selectedSubject.id);
+        setSubjectMastery(overallMastery);
+
+        // Get AI recommendations
+        const rec = await getStudyRecommendations(user.id, selectedSubject.id);
+        setRecommendation(rec);
+      } catch (error) {
+        console.error('Error fetching study data:', error);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchStudyData();
+  }, [user, selectedSubject.id]);
+
+  // Display mastery: use real data if available, fallback to mock
+  const displayMastery = realTasks.length > 0 ? subjectMastery : selectedSubject.mastery;
+  const displayWeakTopics = topicMastery.filter(tm => tm.masteryLevel < 70).slice(0, 3);
 
   // Get current task's timer value
   const currentTimerValue = activeTask ? taskTimers[activeTask.id] || 0 : 0;
@@ -314,9 +400,16 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
       }
     };
   }, [isTimerRunning, activeTask]);
-  const handleStartTask = (task: StudyTask) => {
+  const handleStartTask = async (task: StudyTask) => {
     setActiveTask(task);
     setShowTaskModal(true);
+
+    // Mark task as in-progress in database if real task
+    const realTask = realTasks.find(t => t.id === task.id);
+    if (realTask && user) {
+      await startTask(task.id);
+    }
+
     if (task.type === 'flashcards') {
       setShowFlashcardsModal(true);
       setCurrentFlashcardIndex(0);
@@ -374,18 +467,38 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
       setIsTimerRunning(false);
     }
   };
-  const handleCompleteTask = (taskId: string, verified: boolean = false) => {
-    setTasks(prev =>
-      prev.map(t =>
-        t.id === taskId
-          ? {
-              ...t,
-              completed: true,
-              verified,
-            }
-          : t
-      )
-    );
+  const handleCompleteTask = async (taskId: string, verified: boolean = false) => {
+    // Update in database if real task
+    const realTask = realTasks.find(t => t.id === taskId);
+    if (realTask && user) {
+      const timeSpent = Math.floor((taskTimers[taskId] || 0) / 60); // convert seconds to minutes
+      await completeTaskService(taskId, timeSpent);
+
+      // Refresh tasks
+      const tasksData = await getTodaysTasks(user.id, selectedSubject.id);
+      setRealTasks(tasksData);
+
+      // Refresh mastery data
+      const masteryData = await getTopicMasteryBySubject(user.id, selectedSubject.id);
+      setTopicMastery(masteryData);
+
+      const overallMastery = await calculateSubjectMastery(user.id, selectedSubject.id);
+      setSubjectMastery(overallMastery);
+    } else {
+      // Update mock data
+      setTasks(prev =>
+        prev.map(t =>
+          t.id === taskId
+            ? {
+                ...t,
+                completed: true,
+                verified,
+              }
+            : t
+        )
+      );
+    }
+
     setShowTaskModal(false);
     setShowVerificationQuiz(false);
     setActiveTask(null);
@@ -521,16 +634,14 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
             <div className="bg-white rounded-xl p-3 lg:p-4 border-2 border-slate-200">
               <div className="flex items-center gap-2 mb-2">
                 <div
-                  className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getMasteryBg(selectedSubject.mastery)} flex items-center justify-center`}
+                  className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getMasteryBg(displayMastery)} flex items-center justify-center`}
                 >
                   <Brain className="w-4 h-4 text-white" />
                 </div>
                 <p className="text-xs font-semibold text-slate-600">Mastery</p>
               </div>
-              <p
-                className={`text-2xl lg:text-3xl font-bold ${getMasteryColor(selectedSubject.mastery)}`}
-              >
-                {selectedSubject.mastery}%
+              <p className={`text-2xl lg:text-3xl font-bold ${getMasteryColor(displayMastery)}`}>
+                {displayMastery}%
               </p>
             </div>
 
@@ -623,47 +734,100 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              {mockTopics
-                .filter(t => t.mastery < 75)
-                .slice(0, 3)
-                .map(topic => (
-                  <div
-                    key={topic.id}
-                    className="bg-white rounded-xl border-2 border-slate-200 p-4 hover:border-blue-300 transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-bold text-slate-900 text-sm">{topic.name}</h3>
-                      <div
-                        className={`px-2 py-1 rounded-lg text-xs font-bold ${topic.trend === 'up' ? 'bg-green-100 text-green-700' : topic.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}
-                      >
-                        {topic.trend === 'up' ? '↗' : topic.trend === 'down' ? '↘' : '→'}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Mastery</span>
-                        <span className={`font-bold ${getMasteryColor(topic.mastery)}`}>
-                          {topic.mastery}%
-                        </span>
-                      </div>
-
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              {displayWeakTopics.length > 0
+                ? displayWeakTopics.map(
+                    mastery =>
+                      mastery.topic && (
                         <div
-                          className={`h-full bg-gradient-to-r ${getMasteryBg(topic.mastery)} rounded-full transition-all`}
-                          style={{
-                            width: `${topic.mastery}%`,
-                          }}
-                        />
-                      </div>
+                          key={mastery.id}
+                          className="bg-white rounded-xl border-2 border-slate-200 p-4 hover:border-blue-300 transition-all"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <h3 className="font-bold text-slate-900 text-sm">
+                              {mastery.topic.name}
+                            </h3>
+                            <div
+                              className={`px-2 py-1 rounded-lg text-xs font-bold ${mastery.trend === 'up' ? 'bg-green-100 text-green-700' : mastery.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}
+                            >
+                              {mastery.trend === 'up'
+                                ? '↗'
+                                : mastery.trend === 'down'
+                                  ? '↘'
+                                  : '→'}
+                            </div>
+                          </div>
 
-                      <div className="flex items-center justify-between text-xs text-slate-600">
-                        <span>{topic.quizzesTaken} quizzes</span>
-                        <span>Last: {topic.lastQuizScore}%</span>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-slate-600">Mastery</span>
+                              <span
+                                className={`font-bold ${getMasteryColor(mastery.masteryLevel)}`}
+                              >
+                                {Math.round(mastery.masteryLevel)}%
+                              </span>
+                            </div>
+
+                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full bg-gradient-to-r ${getMasteryBg(mastery.masteryLevel)} rounded-full transition-all`}
+                                style={{
+                                  width: `${mastery.masteryLevel}%`,
+                                }}
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between text-xs text-slate-600">
+                              <span>{mastery.totalQuizzesTaken} quizzes</span>
+                              <span>
+                                Last:{' '}
+                                {mastery.lastQuizScore ? Math.round(mastery.lastQuizScore) : 0}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                  )
+                : mockTopics
+                    .filter(t => t.mastery < 75)
+                    .slice(0, 3)
+                    .map(topic => (
+                      <div
+                        key={topic.id}
+                        className="bg-white rounded-xl border-2 border-slate-200 p-4 hover:border-blue-300 transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <h3 className="font-bold text-slate-900 text-sm">{topic.name}</h3>
+                          <div
+                            className={`px-2 py-1 rounded-lg text-xs font-bold ${topic.trend === 'up' ? 'bg-green-100 text-green-700' : topic.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}
+                          >
+                            {topic.trend === 'up' ? '↗' : topic.trend === 'down' ? '↘' : '→'}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-600">Mastery</span>
+                            <span className={`font-bold ${getMasteryColor(topic.mastery)}`}>
+                              {topic.mastery}%
+                            </span>
+                          </div>
+
+                          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full bg-gradient-to-r ${getMasteryBg(topic.mastery)} rounded-full transition-all`}
+                              style={{
+                                width: `${topic.mastery}%`,
+                              }}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-slate-600">
+                            <span>{topic.quizzesTaken} quizzes</span>
+                            <span>Last: {topic.lastQuizScore}%</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    ))}
             </div>
           </section>
 
@@ -674,14 +838,24 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
                 <CheckCircle2 className="w-5 h-5 text-blue-600" />
                 <h2 className="text-lg lg:text-xl font-bold text-slate-900">Study Tasks</h2>
               </div>
-              <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <button
+                onClick={async () => {
+                  if (!user) return;
+                  setLoadingData(true);
+                  const newTasks = await regenerateStudyPlan(user.id, selectedSubject.id);
+                  setRealTasks(newTasks);
+                  setLoadingData(false);
+                }}
+                className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 disabled:opacity-50"
+                disabled={loadingData}
+              >
                 Regenerate
                 <RotateCcw className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-3">
-              {tasks.map(task => {
+              {displayTasks.map(task => {
                 const TaskIcon = getTaskIcon(task.type);
                 return (
                   <div
@@ -776,9 +950,24 @@ export const StudyPlanPage = ({ preSelectedSubjectId }: StudyPlanPageProps) => {
               <div>
                 <h3 className="text-lg font-bold text-slate-900 mb-2">Smart Study Tip</h3>
                 <p className="text-sm text-slate-700 mb-3">
-                  Based on your quiz performance, focus on <strong>World War II</strong> today.
-                  Spend 30-45 minutes reviewing key events and dates. Your mastery increased by 12%
-                  after the last study session!
+                  {recommendation ? (
+                    <>
+                      {recommendation.recommendation
+                        .split(recommendation.focusTopic)
+                        .map((part, i) => (
+                          <React.Fragment key={i}>
+                            {i > 0 && <strong>{recommendation.focusTopic}</strong>}
+                            {part}
+                          </React.Fragment>
+                        ))}
+                    </>
+                  ) : (
+                    <>
+                      Based on your quiz performance, focus on <strong>World War II</strong> today.
+                      Spend 30-45 minutes reviewing key events and dates. Your mastery increased by
+                      12% after the last study session!
+                    </>
+                  )}
                 </p>
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-600" />

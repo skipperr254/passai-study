@@ -51,18 +51,22 @@ interface QuizDbRow {
 interface QuestionDbRow {
   id: string;
   quiz_id: string;
-  question_text: string;
+  question: string; // Changed from question_text to match DB schema
   type: string;
-  options: string | null;
-  correct_answer: string;
-  explanation: string;
-  topic: string;
+  options: unknown; // Changed to unknown (jsonb in DB)
+  correct_answer: unknown; // Changed to unknown (jsonb in DB)
+  explanation: string | null;
+  topic: string | null;
   difficulty: string;
-  source_material_id: string | null;
-  source_page: number | null;
-  source_excerpt: string | null;
+  points: number;
   order_index: number;
+  tags: string[] | null;
+  material_references: string[] | null;
+  source_material_id: string | null;
+  source_page: string | null; // Changed from number to string to match DB schema
+  source_excerpt: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 // =====================================================
@@ -101,19 +105,45 @@ function mapQuizStatus(dbStatus: string): Quiz['status'] {
 }
 
 function mapQuestionFromDb(row: QuestionDbRow): Question {
+  // Handle correct_answer which can be jsonb (array or string)
+  let correctAnswer: string | string[];
+  if (typeof row.correct_answer === 'string') {
+    correctAnswer = row.correct_answer;
+  } else if (Array.isArray(row.correct_answer)) {
+    correctAnswer = row.correct_answer;
+  } else {
+    // If it's an object, stringify it
+    correctAnswer = JSON.stringify(row.correct_answer);
+  }
+
+  // Handle options which is jsonb
+  let options: string[] | undefined;
+  if (Array.isArray(row.options)) {
+    options = row.options.map(opt => String(opt));
+  } else if (row.options) {
+    // If options exists but isn't an array, try to parse it
+    try {
+      const parsed = typeof row.options === 'string' ? JSON.parse(row.options) : row.options;
+      options = Array.isArray(parsed) ? parsed : undefined;
+    } catch {
+      options = undefined;
+    }
+  }
+
   return {
     id: row.id,
     quizId: row.quiz_id,
     type: row.type as QuestionType,
     difficulty: row.difficulty as DifficultyLevel,
-    question: row.question_text,
-    options: row.options ? JSON.parse(row.options) : undefined,
-    correctAnswer: row.correct_answer,
-    explanation: row.explanation,
-    points: 10, // Default 10 points per question
+    question: row.question, // Now matches DB column name
+    options: options,
+    correctAnswer: correctAnswer,
+    explanation: row.explanation || '',
+    points: row.points || 1,
     order: row.order_index,
-    tags: row.topic ? [row.topic] : undefined,
-    materialReferences: row.source_material_id ? [row.source_material_id] : undefined,
+    tags: row.tags || (row.topic ? [row.topic] : undefined),
+    materialReferences:
+      row.material_references || (row.source_material_id ? [row.source_material_id] : undefined),
   };
 }
 
@@ -337,7 +367,7 @@ export async function generateQuestions(
       // Fetch material content from database
       const { data: materials, error: materialsError } = await supabase
         .from('materials')
-        .select('id, title, type, content, extracted_text, subject_id')
+        .select('id, name, type, metadata, extracted_text, subject_id')
         .in('id', materialIds);
 
       if (materialsError) {
@@ -361,8 +391,8 @@ export async function generateQuestions(
       const combinedContent =
         materials
           ?.map(m => {
-            const content = m.extracted_text || m.content || '';
-            return `=== ${m.title} ===\n${content}`;
+            const content = m.extracted_text || m.metadata || '';
+            return `=== ${m.name} ===\n${content}`;
           })
           .join('\n\n') || '';
 
@@ -379,12 +409,11 @@ export async function generateQuestions(
         quiz_id: quizId,
         question: q.question,
         type: q.type,
-        options: q.options ? JSON.stringify(q.options) : null,
-        correct_answer: Array.isArray(q.correctAnswer)
-          ? q.correctAnswer.join(', ')
-          : q.correctAnswer,
+        options: q.options || null, // Supabase will handle jsonb conversion
+        correct_answer: q.correctAnswer, // Supabase will handle jsonb conversion
         explanation: q.explanation,
-        topic: q.tags.join(', '),
+        topic: q.tags.length > 0 ? q.tags[0] : null, // Store first tag as topic
+        tags: q.tags, // Store all tags in tags array
         difficulty: q.difficulty,
         points: q.points,
         source_material_id: materialIds[index % materialIds.length] || null,
@@ -431,7 +460,6 @@ async function generateTemplateQuestions(
 ): Promise<Question[]> {
   console.log('Generating template questions for quiz:', quizId);
 
-  const questions: Omit<QuestionDbRow, 'created_at'>[] = [];
   const topics = [
     'Core Concepts',
     'Fundamentals',
@@ -440,25 +468,43 @@ async function generateTemplateQuestions(
     'Advanced Topics',
   ];
 
+  const questionsToInsert: Array<{
+    quiz_id: string;
+    question: string;
+    type: string;
+    options: string[];
+    correct_answer: string;
+    explanation: string;
+    topic: string;
+    difficulty: string;
+    points: number;
+    tags: string[];
+    source_material_id: string | null;
+    source_page: string | null;
+    source_excerpt: string | null;
+    order_index: number;
+  }> = [];
+
   for (let i = 0; i < settings.questionCount; i++) {
     const topic = topics[i % topics.length];
     const difficulty = settings.difficulty;
 
-    questions.push({
-      id: '',
+    questionsToInsert.push({
       quiz_id: quizId,
-      question_text: `Question ${i + 1}: This is a ${difficulty} question about ${topic}. (Template question - add materials and enable AI for better questions)`,
+      question: `Question ${i + 1}: This is a ${difficulty} question about ${topic}. (Template question - add materials and enable AI for better questions)`,
       type: 'multiple-choice',
-      options: JSON.stringify([
+      options: [
         'This is a placeholder option A',
         'This is a placeholder option B',
         'This is a placeholder option C',
         'This is a placeholder option D',
-      ]),
+      ],
       correct_answer: 'This is a placeholder option A',
       explanation: `This is a template question. Enable AI generation (VITE_ENABLE_AI_GENERATION=true) and add study materials to generate real questions.`,
       topic: topic,
       difficulty: difficulty,
+      points: difficulty === 'easy' ? 1 : difficulty === 'hard' ? 3 : 2,
+      tags: [topic],
       source_material_id: materialIds[i % materialIds.length] || null,
       source_page: null,
       source_excerpt: null,
@@ -466,25 +512,7 @@ async function generateTemplateQuestions(
     });
   }
 
-  const { data, error } = await supabase
-    .from('questions')
-    .insert(
-      questions.map(q => ({
-        quiz_id: q.quiz_id,
-        question: q.question_text,
-        type: q.type,
-        options: q.options,
-        correct_answer: q.correct_answer,
-        explanation: q.explanation,
-        topic: q.topic,
-        difficulty: q.difficulty,
-        source_material_id: q.source_material_id,
-        source_page: q.source_page,
-        source_excerpt: q.source_excerpt,
-        order_index: q.order_index,
-      }))
-    )
-    .select();
+  const { data, error } = await supabase.from('questions').insert(questionsToInsert).select();
 
   if (error) {
     console.error('Error generating template questions:', error);

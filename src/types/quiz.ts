@@ -33,6 +33,8 @@ export interface QuizAttempt {
   percentage: number;
   timeSpent: number; // seconds
   responses: QuestionResponse[];
+  mood_at_midpoint?: 'confident' | 'okay' | 'struggling' | 'confused';
+  energy_level?: number; // 1-10 scale
 }
 
 export interface QuizSession {
